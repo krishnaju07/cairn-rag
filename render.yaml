@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: cairn-rag
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: PORT
+        value: "8100"
+      - key: ALLOWED_HOSTS
+        sync: false
