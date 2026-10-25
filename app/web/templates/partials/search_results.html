@@ -1,0 +1,22 @@
+<div class="row spread" style="margin-bottom:2px"><strong>{{ payload.results|length }} passage{{ '' if payload.results|length == 1 else 's' }}</strong><span class="dim" style="font-size:12.5px">{{ mode_names[payload.mode] }} · {{ payload.took_ms }} ms · no answer generated</span></div>
+{% for hit in payload.results %}
+  <article class="result" style="animation-delay: {{ loop.index0 * 50 }}ms">
+    <span class="rank">{{ hit.rank }}</span>
+    <div style="min-width:0">
+      <div class="result-head">
+        <div class="row"><strong>{{ hit.filename }}</strong><span class="pill pill-grey">{{ 'p. ' if hit.paged else 'section ' }}{{ hit.page_start }}{% if hit.page_end != hit.page_start %}-{{ hit.page_end }}{% endif %}</span>{% if hit.kind == 'abstract' %}<span class="pill pill-orange">AI abstract</span>{% endif %}</div>
+        <button class="btn btn-sm" type="button" hx-get="/sources/{{ hit.document_id }}?page={{ hit.page_start }}&chunk={{ hit.chunk_id }}{% if hit.focus %}&focus={{ hit.focus|map('join', '-')|join(',') }}{% endif %}" hx-target="#drawer-body" hx-swap="innerHTML" data-drawer="Source" data-wide>{{ icon('file-search', 13) }}Open source</button>
+      </div>
+      <div class="result-text">{{ highlight(hit.text, payload.query) }}</div>
+      <div class="scores">
+        <span class="score main">Relevance <b>{{ '%.3f'|format(hit.relevance) }}</b></span>
+        {% if hit.scores.semantic is not none %}<span class="score">Semantic <b>{{ '%.3f'|format(hit.scores.semantic) }}</b></span>{% endif %}
+        {% if hit.scores.keyword is not none %}<span class="score">BM25 <b>{{ '%.2f'|format(hit.scores.keyword) }}</b></span>{% endif %}
+        {% if hit.scores.fused is not none %}<span class="score">Fused <b>{{ '%.4f'|format(hit.scores.fused) }}</b></span>{% endif %}
+        {% if hit.scores.rerank is not none %}<span class="score">Rerank <b>{{ '%.3f'|format(hit.scores.rerank) }}</b></span>{% endif %}
+      </div>
+    </div>
+  </article>
+{% else %}
+  <div class="empty"><div class="icon-wrap">{{ icon('search', 20) }}</div><h3>No passages found</h3><p>Nothing in this collection matched. Try different words or another way of finding passages.</p></div>
+{% endfor %}

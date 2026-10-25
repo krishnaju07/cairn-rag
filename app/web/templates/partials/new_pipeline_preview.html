@@ -1,0 +1,24 @@
+{% if template == 'copy' %}
+  <div class="field">
+    <label for="new-source">Pipeline to copy</label>
+    {% if existing %}
+      <select class="select" id="new-source" name="source" hx-get="/pipelines/new/preview" hx-trigger="change" hx-target="#new-preview" hx-swap="innerHTML" hx-include="[name=template]" hx-boost="false">
+        {% for item in existing %}<option value="{{ item.id }}" {% if item.id == source %}selected{% endif %}>{{ item.name }}</option>{% endfor %}
+      </select>
+    {% else %}
+      <p class="dim">You have no pipelines to copy yet.</p>
+    {% endif %}
+  </div>
+{% else %}
+  <input type="hidden" name="source" value="">
+{% endif %}
+<div class="field">
+  <span class="field-label">Steps {{ steps|length }}, in run order</span>
+  {% if steps %}
+    <ol class="preview-steps">
+      {% for step in steps %}<li><span class="dim">{{ loop.index }}.</span><span class="chip" style="display:inline-flex;align-items:center;gap:6px">{{ icon(step.icon, 13) }}{{ step.label }}</span></li>{% endfor %}
+    </ol>
+  {% else %}
+    <p class="dim">No steps. You will add Text Extraction first, then each step where it works.</p>
+  {% endif %}
+</div>

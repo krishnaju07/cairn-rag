@@ -1,0 +1,50 @@
+<div id="keys-panel" class="stack">
+  {% if created %}
+    <div class="card" style="border-color:var(--selected-line)">
+      <div class="card-title">Copy your new key now</div>
+      <p class="muted" style="margin-bottom:12px">This is the only time the full key is shown. Only a hash is stored, so it cannot be recovered. Create a new key if you lose it.</p>
+      <div class="secret-box"><code id="new-secret">{{ created.secret }}</code><button class="btn btn-sm" type="button" data-copy="#new-secret">{{ icon('copy', 13) }}Copy</button></div>
+      <pre class="code" style="margin-top:14px">curl -X POST {{ request.base_url }}v1/query \
+  -H "Authorization: Bearer {{ created.secret }}" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "How many vacation days do new employees get?"}'</pre>
+    </div>
+  {% endif %}
+
+  <div class="card table-card">
+    <div class="row spread" style="padding:14px 16px">
+      <strong>Your keys</strong>
+      <button class="btn btn-primary btn-sm" type="button" data-toggle="#new-key-form">{{ icon('plus', 14) }}New key</button>
+    </div>
+    <form id="new-key-form" class="key-form" hx-post="/keys" hx-target="#keys-panel" hx-swap="outerHTML" hx-boost="false" {% if not created and items %}hidden{% endif %}>
+      <input type="hidden" name="fixed" value="{{ fixed or '' }}">
+      <div class="field grow"><label for="k-name">Name</label><input class="input" id="k-name" name="name" placeholder="HR assistant" autocomplete="off" required></div>
+      {% if fixed %}
+        <input type="hidden" name="collection" value="{{ fixed }}">
+      {% else %}
+        <div class="field" style="min-width:200px"><label for="k-col">Collection</label>
+          <select class="select" id="k-col" name="collection" required>{% for c in collections %}<option value="{{ c.id }}">{{ c.name }}</option>{% else %}<option value="" disabled selected>No collections</option>{% endfor %}</select></div>
+      {% endif %}
+      <button class="btn btn-primary" type="submit">Create key</button>
+    </form>
+    {% if items %}
+      <table class="table">
+        <thead><tr><th>Name</th><th>Permissions</th><th>Key</th><th>Last used</th><th>Status</th><th style="width:44px"></th></tr></thead>
+        <tbody>
+          {% for key in items %}
+            <tr>
+              <td><strong>{{ key.name }}</strong><div class="dim" style="font-size:12px">Created {{ key.created_at|timeago }}</div></td>
+              <td class="muted">Search and chat · {{ key.collection_name }}</td>
+              <td class="mono">{{ key.prefix }}…</td>
+              <td class="muted">{{ key.last_used_at|timeago if key.last_used_at else 'Never' }}</td>
+              <td>{% if key.revoked_at %}<span class="pill pill-grey">Revoked</span>{% else %}<span class="pill pill-green">Active</span>{% endif %}</td>
+              <td>{% if not key.revoked_at %}<button class="icon-btn" type="button" aria-label="Revoke {{ key.name }}" title="Revoke" hx-post="/keys/{{ key.id }}/revoke" hx-vals='{"fixed": "{{ fixed or '' }}"}' hx-target="#keys-panel" hx-swap="outerHTML" hx-boost="false">{{ icon('trash-2', 15) }}</button>{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty" style="border:0;border-top:1px solid var(--border);border-radius:0"><div class="icon-wrap">{{ icon('key-round', 20) }}</div><h3>No keys yet</h3><p>Create a key to let an app search and chat with {{ 'this collection' if fixed else 'a collection' }}.</p></div>
+    {% endif %}
+  </div>
+</div>

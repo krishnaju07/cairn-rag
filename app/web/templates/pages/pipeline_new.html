@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui %}
+{% block title %}New pipeline · Cairn{% endblock %}
+{% block content %}
+<div class="page">
+  {{ ui.crumbs([('Pipelines', '/pipelines'), ('New pipeline', None)]) }}
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">New pipeline</h1>
+      <p class="page-sub">Pick a starting point. You can change every step afterwards.</p>
+    </div>
+  </div>
+
+  <form class="new-pipeline card" method="post" action="/pipelines" hx-boost="true" style="padding:0">
+    <div class="new-pipeline-list">
+      {% for key, (label, blurb) in templates.items() %}
+        <label class="option-card" style="margin-bottom:8px">
+          <input type="radio" name="template" value="{{ key }}" {% if key == template %}checked{% endif %}
+                 hx-get="/pipelines/new/preview" hx-trigger="change" hx-target="#new-preview" hx-swap="innerHTML" hx-include="[name=source]" hx-boost="false">
+          <strong>{{ label }}</strong>
+          <span>{{ blurb }}</span>
+        </label>
+      {% endfor %}
+    </div>
+    <div class="new-pipeline-form">
+      <div class="field">
+        <label for="new-name">Name</label>
+        <input class="input" id="new-name" name="name" value="{{ templates[template][0] }}" autocomplete="off" required>
+      </div>
+      <div id="new-preview">{% include "partials/new_pipeline_preview.html" %}</div>
+      <div class="row">
+        <button class="btn btn-primary" type="submit">Create pipeline</button>
+        <a class="btn" href="/pipelines" style="border-color:transparent">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

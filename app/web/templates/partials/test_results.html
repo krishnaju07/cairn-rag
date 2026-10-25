@@ -1,0 +1,43 @@
+{% if problems %}
+  <div class="callout callout-error">{{ icon('circle-alert', 16) }}<div><strong>Fix these before testing</strong><ul>{% for problem in problems %}<li>{{ problem.message }}</li>{% endfor %}</ul></div></div>
+{% else %}
+  {% set failed = reports | selectattr('status', 'equalto', 'failed') | list %}
+  {% if failed %}
+    <div class="callout callout-error" style="margin-bottom:12px">{{ icon('circle-x', 16) }}<div><strong>{{ failed[0].label }} failed</strong><div>{{ failed[0].error }}</div></div></div>
+  {% else %}
+    <div class="callout callout-ok" style="margin-bottom:12px">{{ icon('circle-check', 16) }}<div><strong>Every step that ran worked</strong><div>{{ total_ms|duration }} in total. Nothing was saved.</div></div></div>
+  {% endif %}
+  <div class="stack" style="gap:8px">
+    {% for report in reports %}
+      <details class="report {{ report.status }}" style="animation-delay: {{ loop.index0 * 60 }}ms">
+        <summary>
+          <span class="report-mark">{% if report.status == 'done' %}{{ icon('circle-check', 17) }}{% elif report.status == 'failed' %}{{ icon('circle-x', 17) }}{% else %}{{ icon('chevron-right', 17) }}{% endif %}</span>
+          <div class="grow"><strong>{{ report.label }}</strong><div class="muted" style="font-size:12.5px">{{ report.error or report.summary }}</div></div>
+          <span class="time">{{ report.duration_ms|duration }}</span>
+        </summary>
+        {% if report.detail %}
+          <div class="report-detail">
+            {% set d = report.detail %}
+            {% if report.type == 'extract' %}
+              <dl class="kv"><dt>{{ d.unit|capitalize }}</dt><dd>{{ d.pages }}</dd><dt>Characters</dt><dd>{{ '{:,}'.format(d.characters) }}</dd><dt>Tokens</dt><dd>{{ '{:,}'.format(d.tokens) }}</dd></dl>
+              <div class="snippet">{{ d.preview }}</div>
+            {% elif report.type == 'chunk' %}
+              <dl class="kv"><dt>Chunks</dt><dd>{{ d.chunks }}</dd><dt>Tokens per chunk</dt><dd>{{ d.tokens.min }} min · {{ d.tokens.average }} avg · {{ d.tokens.max }} max</dd><dt>Token counting</dt><dd>{{ d.tokenizer }}</dd></dl>
+              {% for sample in d.samples %}<div class="snippet"><span class="dim">Page {{ sample.page }} · {{ sample.tokens }} tokens</span>{{ '\n' }}{{ sample.text }}</div>{% endfor %}
+            {% elif report.type == 'embed' %}
+              <dl class="kv"><dt>Model</dt><dd>{{ d.model }}</dd><dt>Dimensions</dt><dd>{{ d.dimensions }}</dd><dt>Vectors</dt><dd>{{ d.vectors }}</dd><dt>First vector</dt><dd class="mono">{{ d.first_vector|join(', ') }} …</dd></dl>
+            {% elif report.type == 'abstract' %}
+              <div class="snippet">{{ d.abstract }}</div><dl class="kv"><dt>Model</dt><dd>{{ d.model }}</dd></dl>
+            {% elif report.type == 'sentiment' %}
+              <dl class="kv"><dt>Label</dt><dd>{{ d.label }}</dd><dt>Reason</dt><dd>{{ d.reason }}</dd><dt>Model</dt><dd>{{ d.model }}</dd></dl>
+            {% elif report.type == 'questions' %}
+              {% for sample in d.samples %}<div class="snippet"><span class="dim">Chunk {{ sample.chunk + 1 }} · page {{ sample.page }}</span>{% for question in sample.questions %}{{ '\n' }}• {{ question }}{% endfor %}</div>{% endfor %}
+            {% else %}
+              <dl class="kv">{% for key, value in d.items() %}<dt>{{ key|replace('_', ' ')|capitalize }}</dt><dd>{{ value }}</dd>{% endfor %}</dl>
+            {% endif %}
+          </div>
+        {% endif %}
+      </details>
+    {% endfor %}
+  </div>
+{% endif %}

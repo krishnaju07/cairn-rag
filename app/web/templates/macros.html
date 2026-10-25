@@ -1,0 +1,108 @@
+{% set category_icons = {'Parsing': 'file-text', 'Processing': 'cpu', 'Storage': 'database', 'Enrichment': 'sparkles'} %}
+
+{% macro file_badge(ext) -%}
+<span class="file-badge file-{{ ext }}">{{ ext|upper }}</span>
+{%- endmacro %}
+
+{% macro category(name) -%}
+<span class="pill cat-{{ name|lower }}">{{ icon(category_icons.get(name, 'layers'), 12) }}{{ name }}</span>
+{%- endmacro %}
+
+{% macro crumbs(items) -%}
+<nav class="crumbs">
+  {% for label, href in items %}
+    {% if not loop.first %}<span class="sep">›</span>{% endif %}
+    {% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}<span>{{ label }}</span>{% endif %}
+  {% endfor %}
+</nav>
+{%- endmacro %}
+
+{% macro model_select(name, models, selected, with_extractive=True, only_llm=False, required=False) -%}
+<select class="select" name="{{ name }}" {% if required %}required{% endif %}>
+  {% if not selected %}<option value="" disabled selected>Choose a model…</option>{% endif %}
+  {% for provider in models %}
+    {% if provider.llm or (with_extractive and not only_llm) %}
+      <optgroup label="{{ provider.label }}{% if not provider.available %} · unavailable{% endif %}">
+        {% for model in provider.models %}
+          <option value="{{ model.id }}" {% if model.id == selected %}selected{% endif %} {% if not provider.available %}disabled{% endif %}>
+            {{ model.label }}{% if model.price_in is not none %} · ${{ '%g'|format(model.price_in) }} in / ${{ '%g'|format(model.price_out) }} out per 1M tokens{% endif %}
+          </option>
+        {% else %}
+          <option disabled>{{ provider.reason or 'No models' }}</option>
+        {% endfor %}
+      </optgroup>
+    {% endif %}
+  {% endfor %}
+</select>
+{%- endmacro %}
+
+{% macro status_icon(status, size=14) -%}
+{%- if status == 'done' or status == 'ready' -%}{{ icon('circle-check', size) }}
+{%- elif status == 'running' or status == 'processing' -%}{{ icon('loader-circle', size, 'spinner') }}
+{%- elif status == 'failed' -%}{{ icon('circle-x', size) }}
+{%- elif status == 'skipped' -%}{{ icon('chevron-right', size) }}
+{%- else -%}{{ icon('clock', size) }}{%- endif -%}
+{%- endmacro %}
+
+{% macro empty(icon_name, title, text) -%}
+<div class="empty">
+  <div class="icon-wrap">{{ icon(icon_name, 20) }}</div>
+  <h3>{{ title }}</h3>
+  <p>{{ text }}</p>
+  {{ caller() if caller else '' }}
+</div>
+{%- endmacro %}
+
+{% macro mode_cards(modes, selected) -%}
+<div class="segmented">
+  {% for key, (label, hint) in modes.items() %}
+    <label class="option-card">
+      <input type="radio" name="retrieval_mode" value="{{ key }}" {% if key == selected %}checked{% endif %}>
+      <strong>{{ label }}</strong>
+      <span>{{ hint }}</span>
+    </label>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro estimate_rows(figures, name) -%}
+{% if figures.costly %}
+<table class="estimate-table">
+  <tr><th>Costly step</th><th>Calls</th><th>Tokens in / out</th><th>Estimate</th></tr>
+  {% for item in figures['items'] %}
+    <tr>
+      <td>
+        <label class="check">
+          <input type="checkbox" name="{{ name }}" value="{{ item.step_id }}" {% if item.ready %}checked{% else %}disabled{% endif %}>
+          <span>{{ item.label }}<br><span class="dim" style="font-size:12px">{{ item.model or 'no model selected' }}</span></span>
+        </label>
+      </td>
+      <td>{{ item.calls }}</td>
+      <td>{{ '{:,}'.format(item.input_tokens) }} / up to {{ '{:,}'.format(item.output_tokens) }}</td>
+      <td>{% if not item.ready %}<span class="pill pill-amber">Needs setup</span>{% elif item.local %}<span class="pill pill-green">Free · local</span>{% elif item.free %}<span class="pill pill-green">Free · hosted</span>{% else %}<b>{{ item.usd|usd }}</b>{% endif %}</td>
+    </tr>
+  {% endfor %}
+</table>
+<p class="help dim" style="margin-top:8px;font-size:12px">Upper bound: output tokens are billed only for what the model writes. Unchecked steps are skipped.</p>
+{% else %}
+<div class="callout callout-ok">{{ icon('shield-check', 16) }}<span>No costly steps. Everything runs locally and nothing is billed.</span></div>
+{% endif %}
+{%- endmacro %}
+
+{% macro key_form(provider_id, label, secret, test_spec) -%}
+<form class="key-row" hx-post="/providers/{{ provider_id }}/key" hx-target="#providers" hx-swap="innerHTML" hx-boost="false">
+  <div class="field grow">
+    <label for="key-{{ provider_id }}">{{ label }}</label>
+    <div class="input-reveal">
+      <input class="input" id="key-{{ provider_id }}" type="password" name="key" autocomplete="off" spellcheck="false"
+             placeholder="{{ 'Saved (' ~ secret ~ '). Paste a new key to replace it.' if secret else 'Paste your key' }}">
+      <button class="icon-btn reveal" type="button" data-reveal aria-label="Show or hide the key">{{ icon('eye', 16) }}</button>
+    </div>
+  </div>
+  <button class="btn btn-primary" type="submit">Save</button>
+  {% if secret %}
+    <button class="btn" type="button" hx-post="/providers/test" hx-vals='{"llm": "{{ test_spec }}"}' hx-swap="none" hx-boost="false">Test connection</button>
+    <button class="btn btn-danger" type="button" hx-post="/providers/{{ provider_id }}/key/remove" hx-target="#providers" hx-swap="innerHTML" hx-boost="false">Remove</button>
+  {% endif %}
+</form>
+{%- endmacro %}

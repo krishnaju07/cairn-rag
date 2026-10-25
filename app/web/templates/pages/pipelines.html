@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui %}
+{% block title %}Pipelines · Cairn{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">Pipelines</h1>
+      <p class="page-sub">A pipeline defines how every uploaded file becomes searchable passages. Test a draft on one file, then publish a numbered version to use it in a collection.</p>
+    </div>
+    <div class="head-actions">
+      <a class="btn btn-primary" href="/pipelines/new">{{ icon('plus', 15) }}New pipeline</a>
+    </div>
+  </div>
+
+  {% if items %}
+    <div class="grid-cards">
+      {% for item in items %}
+        <a class="card card-link" href="/pipelines/{{ item.id }}" style="animation: rise .4s var(--ease) {{ loop.index0 * 50 }}ms backwards">
+          <div class="row spread">
+            <div class="card-title">{{ item.name }}</div>
+            {% if item.latest_version %}<span class="pill pill-teal">v{{ item.latest_version }}</span>{% else %}<span class="pill pill-amber">Draft</span>{% endif %}
+          </div>
+          <p class="muted" style="font-size:12.5px">{{ item.step_count }} step{{ '' if item.step_count == 1 else 's' }} · used by {{ item.collections }} collection{{ '' if item.collections == 1 else 's' }} · edited {{ item.updated_at|timeago }}</p>
+          <div class="chips">{% for label in item.labels %}<span class="chip">{{ label }}</span>{% else %}<span class="chip">No steps yet</span>{% endfor %}</div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% call ui.empty('workflow', 'No pipelines yet', 'Start from the standard document template or build one from scratch.') %}
+      <a class="btn btn-primary" href="/pipelines/new">{{ icon('plus', 15) }}New pipeline</a>
+    {% endcall %}
+  {% endif %}
+</div>
+{% endblock %}

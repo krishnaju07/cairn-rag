@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui %}
+{% block title %}Collections · Cairn{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">Collections</h1>
+      <p class="page-sub">Each collection has its own documents, pipeline, access, and search and answer settings.</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn btn-primary" hx-get="/collections/new" hx-target="#modal-body" hx-swap="innerHTML" data-modal>{{ icon('plus', 15) }}New collection</button>
+    </div>
+  </div>
+
+  {% if items %}
+    <div class="card table-card">
+      <table class="table">
+        <thead><tr><th>Name</th><th>Documents</th><th>Pipeline</th><th>Answers</th><th>Search</th></tr></thead>
+        <tbody>
+          {% for item in items %}
+            <tr class="link-row" data-href="/collections/{{ item.id }}" style="animation: rise .35s var(--ease) {{ loop.index0 * 40 }}ms backwards">
+              <td>
+                <div class="row"><span class="dot tone-{{ item.tone }}"></span><div><a href="/collections/{{ item.id }}" style="font-weight:700">{{ item.name }}</a><div class="muted" style="font-size:12.5px">{{ item.description or 'No description' }}</div></div></div>
+              </td>
+              <td>{{ item.ready }}{% if item.busy %} <span class="pill pill-teal">{{ item.busy }} processing</span>{% endif %}</td>
+              <td>{{ item.pipeline_name }} <span class="pill pill-grey">v{{ item.pipeline_version }}</span></td>
+              <td class="muted" style="font-size:12.5px">{{ item.answer_model.replace(':', ' · ', 1) if item.answer_model != 'extractive' else 'Extractive, no model' }}</td>
+              <td class="muted" style="font-size:12.5px">{{ mode_names[item.retrieval_mode] }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    {% call ui.empty('folder-open', 'No collections yet', 'A collection groups your documents and picks the pipeline that processes them.') %}
+      <button class="btn btn-primary" hx-get="/collections/new" hx-target="#modal-body" hx-swap="innerHTML" data-modal>{{ icon('plus', 15) }}New collection</button>
+    {% endcall %}
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% import "macros.html" as ui %}
+<p class="muted" style="margin-bottom:16px">Pick a step to add. Steps that cannot work in this pipeline yet say what they need.</p>
+{% for group in ('Parsing', 'Processing', 'Storage', 'Enrichment') %}
+  {% set entries = pipeline.catalog | selectattr('category', 'equalto', group) | list %}
+  {% if entries %}
+    <div class="add-group">
+      <div class="add-group-title">{{ icon(ui.category_icons[group], 14) }}{{ group }}</div>
+      {% for entry in entries %}
+        {% if entry.state == 'available' %}
+          <button class="add-item" type="button" hx-post="/pipelines/{{ pipeline.id }}/steps" hx-vals='{"type": "{{ entry.type }}", "at": {{ entry.add_at }}}'
+                  hx-target="#builder" hx-swap="innerHTML" hx-boost="false" data-close-drawer>
+        {% else %}
+          <div class="add-item disabled" title="{{ entry.reason }}">
+        {% endif %}
+          <span class="step-icon">{{ icon(entry.icon, 16) }}</span>
+          <span class="grow"><strong>{{ entry.label }}{% if entry.costly %} <span class="pill pill-orange">Costly</span>{% endif %}</strong><span>{{ entry.blurb }}</span></span>
+          <span class="state">
+            {% if entry.state == 'in_pipeline' %}In pipeline
+            {% elif entry.state == 'unavailable' %}{{ entry.reason }}
+            {% elif entry.at_end %}Adds at the end
+            {% else %}Adds at step {{ entry.add_at + 1 }}{% endif %}
+          </span>
+        {% if entry.state == 'available' %}</button>{% else %}</div>{% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endfor %}

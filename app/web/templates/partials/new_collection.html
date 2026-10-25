@@ -1,0 +1,28 @@
+{% import "macros.html" as ui %}
+<form class="dialog-body" method="post" action="/collections">
+  <div>
+    <h3 style="font-size:18px">New collection</h3>
+    <p class="muted" style="margin-top:4px">A set of documents people can search and ask questions about.</p>
+  </div>
+  {% if not versions %}
+    <div class="callout callout-warn">{{ icon('triangle-alert', 16) }}<span>No pipeline is published yet. <a class="link" href="/pipelines">Build and publish one</a> first; a collection uses a published version.</span></div>
+  {% endif %}
+  <div class="field"><label for="c-name">Name</label><input class="input" id="c-name" name="name" placeholder="HR Policies" autocomplete="off" required></div>
+  <div class="field"><label for="c-desc">Description</label><input class="input" id="c-desc" name="description" placeholder="What goes in it" autocomplete="off"></div>
+  <div class="field">
+    <label for="c-pipeline">Pipeline</label>
+    <select class="select" id="c-pipeline" name="pipeline_version" required>
+      {% for item in versions %}<option value="{{ item.id }}:{{ item.version }}">{{ item.name }} · v{{ item.version }}</option>{% endfor %}
+    </select>
+    <span class="help">Decides how its documents are processed. You can change the version later in Processing.</span>
+  </div>
+  <div class="field">
+    <label for="c-model">Answer model</label>
+    {{ ui.model_select('answer_model', models, default_model, with_extractive=True) }}
+    <span class="help">Writes the answers from the retrieved passages. Ollama and extractive stay on this machine. NVIDIA (free tier) and Anthropic (paid) are hosted: they receive your question and the retrieved passages.</span>
+  </div>
+  <div class="dialog-actions">
+    <button class="btn" type="button" data-close-modal>Cancel</button>
+    <button class="btn btn-primary" type="submit" {% if not versions %}disabled{% endif %}>Create collection</button>
+  </div>
+</form>

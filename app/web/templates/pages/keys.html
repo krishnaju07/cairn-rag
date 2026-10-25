@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui %}
+{% block title %}API keys · Cairn{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-head"><div><h1 class="page-title">API keys</h1><p class="page-sub">Use your collections from your own apps: send <span class="mono">Authorization: Bearer &lt;key&gt;</span> to <span class="mono">/v1/search</span> or <span class="mono">/v1/query</span>. Each key works for one collection only.</p></div></div>
+  {% include "partials/keys_panel.html" %}
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{"question": "How many paid vacation days do new full-time employees get per year?", "doc": "Employee Handbook 2026.pdf", "contains": "15 paid vacation days"}
+{"question": "What does the vacation allowance rise to after three full years of service?", "doc": "Employee Handbook 2026.pdf", "contains": "rises to 20 days"}
+{"question": "How many unused vacation days can be carried over into the next year?", "doc": "Employee Handbook 2026.pdf", "contains": "up to 5 unused days", "says": ["5 unused days", "5 days", "five days"]}
+{"question": "How many weeks of paid parental leave do primary caregivers receive?", "doc": "Employee Handbook 2026.pdf", "contains": "16 weeks"}
+{"question": "After how many consecutive sick days is a doctor's note required?", "doc": "Employee Handbook 2026.pdf", "contains": "3 consecutive days", "says": ["3 consecutive", "three consecutive"]}
+{"question": "What is the nightly hotel reimbursement limit for business travel?", "doc": "Employee Handbook 2026.pdf", "contains": "$220 per night", "says": ["$220"]}
+{"question": "How much can meals cost per day during business travel?", "doc": "Employee Handbook 2026.pdf", "contains": "$75 per day"}
+{"question": "How quickly must a lost or stolen laptop be reported?", "doc": "Employee Handbook 2026.pdf", "contains": "within 24 hours"}
+{"question": "When do performance reviews take place?", "doc": "Employee Handbook 2026.pdf", "contains": "June and December"}
+{"question": "What are the core working hours?", "doc": ["Employee Handbook 2026.pdf", "Remote Work Policy.md"], "contains": "10:00 to 16:00"}
+{"question": "How much is the home-office stipend for new remote employees?", "doc": "Remote Work Policy.md", "contains": "$600"}
+{"question": "For how many days per year may employees work from another country?", "doc": "Remote Work Policy.md", "contains": "up to 20 days"}
+{"question": "What share of the health insurance premium does the company pay for employees?", "doc": "Benefits Guide.docx", "contains": "80%"}
+{"question": "What does the Plus health plan cost per month for an employee?", "doc": "Benefits Guide.docx", "contains": "$45"}
+{"question": "How large is the yearly learning budget?", "doc": "Benefits Guide.docx", "contains": "$1,200"}
+{"question": "Is the office open on Christmas Eve?", "doc": "Holiday Calendar 2026.csv", "contains": "Christmas Eve"}
+{"question": "Who is the CEO of Northwind Labs?", "answerable": false}
+{"question": "What is the company policy on bringing pets to the office?", "answerable": false}
+{"question": "How many stock options do new engineers receive?", "answerable": false}
+{"question": "What is the dress code?", "answerable": false}

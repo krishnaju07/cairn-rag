@@ -1,0 +1,55 @@
+{% import "macros.html" as ui %}
+<div id="docs-table" {% if busy %}hx-get="/collections/{{ collection.id }}/documents/table?q={{ query|urlencode }}&status={{ status }}" hx-trigger="every 1s" hx-swap="outerHTML"{% endif %}>
+  <div class="toolbar">
+    <div class="input-icon grow">
+      {{ icon('search', 15) }}
+      <input class="input" type="search" name="q" value="{{ query }}" placeholder="Filter by name" autocomplete="off"
+             hx-get="/collections/{{ collection.id }}/documents/table" hx-trigger="input changed delay:250ms" hx-target="#docs-table" hx-swap="outerHTML" hx-include="[name=status]" hx-boost="false">
+    </div>
+    <select class="select" name="status" style="width:170px" hx-get="/collections/{{ collection.id }}/documents/table" hx-trigger="change" hx-target="#docs-table" hx-swap="outerHTML" hx-include="[name=q]" hx-boost="false">
+      {% for value, label in (('', 'All statuses'), ('ready', 'Ready'), ('processing', 'Processing'), ('queued', 'Queued'), ('failed', 'Failed')) %}<option value="{{ value }}" {% if value == status %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button class="btn" type="button" hx-post="/collections/{{ collection.id }}/reprocess" hx-swap="none" hx-boost="false" {% if not documents %}disabled{% endif %}>{{ icon('rotate-ccw', 14) }}Reprocess all</button>
+  </div>
+
+  {% if documents %}
+    <div class="card table-card">
+      <table class="table">
+        <thead><tr><th>Name</th><th style="width:34%">Status</th><th>Chunks</th><th>Added</th><th style="width:44px"></th></tr></thead>
+        <tbody>
+          {% for doc in documents %}
+            <tr class="link-row" data-href="/collections/{{ collection.id }}/documents/{{ doc.id }}">
+              <td>
+                <div class="row">{{ ui.file_badge(doc.ext) }}
+                  <div style="min-width:0"><a href="/collections/{{ collection.id }}/documents/{{ doc.id }}" style="font-weight:700;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ doc.filename }}</a>
+                    <div class="muted" style="font-size:12.5px">{{ doc.size_bytes|filesize }}{% if doc.page_count %} · {{ doc.page_count|plural('page' if doc.paged else 'section') }}{% endif %} · v{{ doc.pipeline_version }}</div></div></div>
+              </td>
+              <td>
+                {% if doc.status in ('queued', 'processing') %}
+                  {% set total = doc.steps|length %}
+                  {% set running = (doc.steps | selectattr('status', 'equalto', 'running') | list | first) %}
+                  <span class="pill pill-teal">{{ icon('loader-circle', 12, 'spinner') }}{{ 'Queued' if doc.status == 'queued' else 'Processing' }}</span>
+                  <div class="muted" style="font-size:12px;margin:6px 0 4px">Step {{ [doc.progress + 1, total]|min }} of {{ total }}{% if running %}, {{ running.label }}{% endif %}</div>
+                  <div class="bar"><span style="width: {{ (doc.progress / total * 100) if total else 0 }}%"></span></div>
+                {% elif doc.status == 'ready' %}
+                  <span class="pill pill-green">{{ icon('circle-check', 12) }}Ready</span>
+                  {% if doc.error %}<div class="muted" style="font-size:12px;margin-top:6px;color:var(--amber)">{{ doc.error }}</div>{% endif %}
+                {% else %}
+                  <span class="pill pill-red">{{ icon('circle-x', 12) }}Failed</span>
+                  <div class="muted" style="font-size:12px;margin-top:6px;color:var(--red)">{{ doc.error }}</div>
+                {% endif %}
+              </td>
+              <td>{{ doc.chunks or '' }}</td>
+              <td class="muted">{{ doc.created_at|timeago }}</td>
+              <td><button class="icon-btn" type="button" aria-label="Delete {{ doc.filename }}" hx-post="/collections/{{ collection.id }}/documents/{{ doc.id }}/delete" hx-target="#docs-table" hx-swap="outerHTML" hx-boost="false">{{ icon('trash-2', 15) }}</button></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    {% call ui.empty('file-text', 'No documents in this collection' if not query and not status else 'No documents match', 'Uploaded files run through ' ~ collection.pipeline_name ~ ' v' ~ collection.pipeline_version ~ '. Drop them anywhere on this page, or use Upload.') %}
+      <button class="btn btn-primary" hx-get="/collections/{{ collection.id }}/upload" hx-target="#drawer-body" hx-swap="innerHTML" data-drawer="Upload to {{ collection.name }}" data-wide>{{ icon('upload', 15) }}Upload files</button>
+    {% endcall %}
+  {% endif %}
+</div>

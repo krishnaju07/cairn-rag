@@ -1,0 +1,100 @@
+{% import "macros.html" as ui %}
+{% set by_id = {} %}
+{% for provider in catalog %}{% set _ = by_id.update({provider.id: provider}) %}{% endfor %}
+
+<div class="card">
+  <div class="card-title">Default answer model</div>
+  <p class="muted" style="margin-bottom:14px">Used when you create a collection and for new LLM steps. A collection can still pick its own under Settings → Answers.</p>
+  <form class="row" hx-post="/providers/default" hx-target="#providers" hx-swap="innerHTML" hx-boost="false" style="align-items:flex-start">
+    <div class="grow">{{ ui.model_select('default_model', catalog, default_model, with_extractive=True) }}</div>
+    <button class="btn btn-primary" type="submit">Save</button>
+    <button class="btn" type="button" hx-post="/providers/test" hx-include="[name=default_model]" hx-swap="none" hx-boost="false">Test connection</button>
+  </form>
+  <p class="help dim" style="margin-top:10px;font-size:12px">Models from services that are not set up yet are greyed out. Add their key below to use them.</p>
+</div>
+
+<div class="card">
+  <div class="provider-row">
+    <span class="step-icon">{{ icon('cpu', 18) }}</span>
+    <div class="grow"><strong>Local models</strong><div class="muted" style="font-size:12.5px">Embeddings (BGE small, MiniLM) and the reranker run on this machine through ONNX. No cost, no key.</div></div>
+    {% if models.status == 'ready' %}<span class="pill pill-green">Ready</span>{% elif models.status == 'loading' %}<span class="pill pill-teal">{{ icon('loader-circle', 12, 'spinner') }}Downloading</span>{% elif models.status == 'error' %}<span class="pill pill-red">Error</span>{% else %}<span class="pill pill-grey">Idle</span>{% endif %}
+  </div>
+  {% if models.message %}<p class="muted" style="margin-top:10px;font-size:12.5px">{{ models.message }}</p>{% endif %}
+</div>
+
+{% set ollama = by_id.ollama %}
+<div class="card">
+  <div class="provider-row">
+    <span class="step-icon">{{ icon('server', 18) }}</span>
+    <div class="grow"><strong>{{ ollama.label }}</strong><div class="muted" style="font-size:12.5px">Runs open models on your machine at {{ ollama_url }}. Free, and nothing leaves this computer.</div></div>
+    {% if ollama.available %}<span class="pill pill-green">Available</span>{% else %}<span class="pill pill-amber">Not running</span>{% endif %}
+  </div>
+  {% if ollama.available %}
+    <div class="chips">{% for model in ollama.models %}<span class="chip">{{ model.label }}</span>{% endfor %}</div>
+  {% else %}
+    <p class="muted" style="margin-top:10px;font-size:12.5px">{{ ollama.reason }}</p>
+  {% endif %}
+</div>
+
+{% set nvidia = by_id.nvidia %}
+<div class="card">
+  <div class="provider-row">
+    <span class="step-icon">{{ icon('zap', 18) }}</span>
+    <div class="grow"><strong>{{ nvidia.label }}</strong><div class="muted" style="font-size:12.5px">Hosted Nemotron, Kimi, DeepSeek, Mistral and more through build.nvidia.com. Free for development and rate limited. Your question and the retrieved passages are sent to NVIDIA.</div></div>
+    {% if nvidia.available %}<span class="pill pill-green">{{ nvidia.models|length }} models ready</span>{% elif nvidia_checking %}<span class="pill pill-teal">{{ icon('loader-circle', 12, 'spinner') }}Checking</span>{% elif secrets.NVIDIA_API_KEY %}<span class="pill pill-amber">No model answered</span>{% else %}<span class="pill pill-amber">Not set up</span>{% endif %}
+  </div>
+  <div style="margin-top:14px">{{ ui.key_form('nvidia', 'NVIDIA API key', secrets.NVIDIA_API_KEY, nvidia.models[0].id if nvidia.models else '') }}</div>
+  <p class="help dim" style="font-size:12px">Create a free key at build.nvidia.com. It starts with nvapi-.</p>
+  {% if secrets.NVIDIA_API_KEY %}
+    <div class="row spread" style="margin-top:6px">
+      <span class="muted" style="font-size:12.5px">
+        {% if nvidia_checking %}{{ icon('loader-circle', 13, 'spinner') }} Checking which models answer right now. This takes about half a minute.
+        {% elif nvidia.models %}{{ nvidia.models|length }} models answered when last checked. NVIDIA retires models often, so only working ones are listed.
+        {% else %}{{ nvidia.reason }}{% endif %}
+      </span>
+      <button class="btn btn-sm" type="button" hx-post="/providers/nvidia/refresh" hx-target="#providers" hx-swap="innerHTML" hx-boost="false">{{ icon('rotate-ccw', 13) }}Refresh models</button>
+    </div>
+    <div class="chips">{% for model in nvidia.models[:10] %}<span class="chip">{{ model.label.split('/')[-1] }}</span>{% endfor %}{% if nvidia.models|length > 10 %}<span class="chip">+{{ nvidia.models|length - 10 }} more in the model pickers</span>{% endif %}</div>
+  {% endif %}
+  {% if nvidia_checking %}<div hx-get="/providers/panel" hx-trigger="every 4s" hx-target="#providers" hx-swap="innerHTML"></div>{% endif %}
+</div>
+
+{% set anthropic = by_id.anthropic %}
+<div class="card">
+  <div class="provider-row">
+    <span class="step-icon">{{ icon('cloud', 18) }}</span>
+    <div class="grow"><strong>{{ anthropic.label }}</strong><div class="muted" style="font-size:12.5px">Claude models over the Anthropic API. Billed per token. Your question and the retrieved passages are sent to Anthropic.</div></div>
+    {% if anthropic.available %}<span class="pill pill-green">Key set</span>{% else %}<span class="pill pill-amber">Not set up</span>{% endif %}
+  </div>
+  <div style="margin-top:14px">{{ ui.key_form('anthropic', 'Anthropic API key', secrets.ANTHROPIC_API_KEY, anthropic.models[0].id) }}</div>
+  <div class="chips">{% for model in anthropic.models %}<span class="chip">{{ model.label }}{% if model.price_in is not none %} · ${{ '%g'|format(model.price_in) }} / ${{ '%g'|format(model.price_out) }} per 1M{% endif %}</span>{% endfor %}</div>
+</div>
+
+<div class="card">
+  <div class="provider-row">
+    <span class="step-icon">{{ icon('quote', 18) }}</span>
+    <div class="grow"><strong>Extractive (no LLM)</strong><div class="muted" style="font-size:12.5px">Answers by quoting the closest sentences, with no model. Free and instant, but it cannot paraphrase, combine passages, or reliably refuse a question that only shares a name with your documents.</div></div>
+    <span class="pill pill-green">Available</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="provider-row">
+    <span class="step-icon">{{ icon('scan-search', 18) }}</span>
+    <div class="grow"><strong>LlamaParse</strong><div class="muted" style="font-size:12.5px">OCR for scanned PDFs and better tables. Sends the PDF to LlamaCloud and uses your credits. It only runs when you turn OCR on in a pipeline's Text Extraction step.</div></div>
+    {% if secrets.LLAMA_CLOUD_API_KEY %}<span class="pill pill-green">Key set</span>{% else %}<span class="pill pill-grey">No key</span>{% endif %}
+  </div>
+  <form class="key-row" style="margin-top:14px" hx-post="/providers/llamaparse" hx-target="#providers" hx-swap="innerHTML" hx-boost="false">
+    <div class="field grow">
+      <label for="key-llamaparse">LlamaCloud API key</label>
+      <div class="input-reveal">
+        <input class="input" id="key-llamaparse" type="password" name="key" autocomplete="off" spellcheck="false"
+               placeholder="{{ 'Saved (' ~ secrets.LLAMA_CLOUD_API_KEY ~ '). Paste a new key to replace it.' if secrets.LLAMA_CLOUD_API_KEY else 'llx-…' }}">
+        <button class="icon-btn reveal" type="button" data-reveal aria-label="Show or hide the key">{{ icon('eye', 16) }}</button>
+      </div>
+    </div>
+    <div class="field" style="min-width:260px"><label for="project-llamaparse">Project ID (optional)</label><input class="input" id="project-llamaparse" name="project_id" value="{{ project_id }}" autocomplete="off" spellcheck="false"></div>
+    <button class="btn btn-primary" type="submit">Save</button>
+    {% if secrets.LLAMA_CLOUD_API_KEY %}<button class="btn btn-danger" type="button" hx-post="/providers/llamaparse/remove" hx-target="#providers" hx-swap="innerHTML" hx-boost="false">Remove</button>{% endif %}
+  </form>
+</div>

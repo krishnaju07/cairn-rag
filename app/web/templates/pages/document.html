@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui %}
+{% block title %}{{ document.filename }} · Cairn{% endblock %}
+{% block content %}
+<div class="page">
+  {{ ui.crumbs([('Collections', '/collections'), (collection.name, '/collections/' ~ collection.id), (document.filename, None)]) }}
+  <div class="page-head">
+    <div>
+      <div class="status-line"><h1 class="page-title">{{ document.filename }}</h1>
+        {% if document.status == 'ready' %}<span class="pill pill-green">{{ icon('circle-check', 12) }}Ready</span>{% elif document.status == 'failed' %}<span class="pill pill-red">Failed</span>{% else %}<span class="pill pill-teal">{{ icon('loader-circle', 12, 'spinner') }}{{ document.status|capitalize }}</span>{% endif %}</div>
+      <p class="page-sub">{{ document.chunks }} chunks, searchable in {{ collection.name }}{% if document.error %} · <span style="color:var(--amber)">{{ document.error }}</span>{% endif %}</p>
+    </div>
+    <div class="head-actions">
+      <a class="btn" href="/collections/{{ collection.id }}/search">{{ icon('search', 14) }}Search</a>
+      <a class="btn" href="/collections/{{ collection.id }}/chat">{{ icon('message-square', 14) }}Chat</a>
+      <button class="btn" type="button" hx-post="/collections/{{ collection.id }}/documents/{{ document.id }}/reprocess" hx-swap="none" hx-boost="false">{{ icon('rotate-ccw', 14) }}Reprocess</button>
+      <a class="btn" href="/documents/{{ document.id }}/file" hx-boost="false">{{ icon('upload', 14, 'flip') }}Download</a>
+      <button class="icon-btn" type="button" aria-label="Delete document" hx-post="/collections/{{ collection.id }}/documents/{{ document.id }}/delete" hx-vals='{"redirect": "1"}' hx-swap="none" hx-boost="false">{{ icon('trash-2', 17) }}</button>
+    </div>
+  </div>
+
+  <div class="doc-grid">
+    <div class="stack">
+      <div class="card">
+        <div class="card-title">File info</div>
+        <dl class="kv wide"><dt>Uploaded</dt><dd>{{ document.created_at|timeago }}</dd><dt>Size</dt><dd>{{ document.size_bytes|filesize }}</dd><dt>Type</dt><dd>{{ {'pdf': 'application/pdf', 'docx': 'Word document', 'md': 'Markdown', 'txt': 'Plain text', 'csv': 'CSV table'}[document.ext] }}</dd><dt>Pipeline</dt><dd>{{ collection.pipeline_name }} v{{ document.pipeline_version }}</dd></dl>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px">Processing steps</div>
+        <ol class="timeline">
+          {% for step in document.steps %}
+            <li class="{{ step.status }}">
+              <span class="timeline-mark">{{ ui.status_icon(step.status, 16) }}</span>
+              <div class="grow"><strong>{{ step.label }}</strong><div class="dim" style="font-size:12px">{{ step.step_type }}</div>{% if step.status == 'failed' %}<div style="color:var(--red);font-size:12px">{{ step.detail }}</div>{% endif %}</div>
+              <span class="dim" style="font-size:12.5px;font-variant-numeric:tabular-nums">{{ step.duration_ms|duration }}</span>
+            </li>
+          {% endfor %}
+        </ol>
+        <div class="row spread" style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px"><span class="dim">Total</span><strong>{{ document.total_ms|duration }}</strong></div>
+      </div>
+    </div>
+
+    <div class="stack">
+      {% if document.meta %}
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px">Metadata</div>
+          <dl class="meta-grid">
+            {% for key, label in (('title', 'Title'), ('language', 'Language'), ('pages', 'Pages'), ('words', 'Words'), ('sentences', 'Sentences'), ('reading_minutes', 'Reading time'), ('author', 'Author')) %}
+              {% if document.meta.get(key) is not none and document.meta.get(key) != '' %}<div><dt>{{ label }}</dt><dd>{% if key == 'reading_minutes' %}{{ document.meta[key] }} min{% elif key == 'words' or key == 'sentences' %}{{ '{:,}'.format(document.meta[key]) }}{% else %}{{ document.meta[key] }}{% endif %}</dd></div>{% endif %}
+            {% endfor %}
+          </dl>
+        </div>
+        {% if document.meta.abstract or document.meta.sentiment %}
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px">Enrichments</div>
+            {% if document.meta.abstract %}<div class="field-label">Abstract</div><p style="margin:6px 0 14px;line-height:1.7">{{ document.meta.abstract }}</p>{% endif %}
+            {% if document.meta.sentiment %}<div class="field-label">Sentiment</div><p style="margin-top:6px"><span class="pill pill-teal">{{ document.meta.sentiment.label }}</span> <span class="muted">{{ document.meta.sentiment.reason }}</span></p>{% endif %}
+          </div>
+        {% endif %}
+      {% endif %}
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="tabs" style="padding:0 18px"><span class="tab active">Chunks <span class="count-badge">{{ document.chunks }}</span></span></div>
+        <div class="chunk-list">
+          {% for chunk in document.chunks_list %}
+            <button class="chunk-row" type="button" hx-get="/sources/{{ document.id }}?page={{ chunk.page_start }}&chunk={{ chunk.id }}" hx-target="#drawer-body" hx-swap="innerHTML" data-drawer="Source" data-wide>
+              <span class="dim">{{ chunk.idx + 1 }}</span>
+              <div><div class="dim" style="font-size:12px">{{ 'Page' if document.paged else 'Section' }} {{ chunk.page_start }}{% if chunk.page_end != chunk.page_start %}-{{ chunk.page_end }}{% endif %}, {{ chunk.tokens }} tokens</div>
+                <div class="clamp">{{ chunk.text }}</div></div>
+            </button>
+          {% else %}
+            <p class="dim" style="padding:18px">No chunks yet.</p>
+          {% endfor %}
+          {% if document.chunks > document.chunks_list|length %}<p class="dim" style="padding:14px 18px;font-size:12.5px">Showing the first {{ document.chunks_list|length }} of {{ document.chunks }} chunks.</p>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

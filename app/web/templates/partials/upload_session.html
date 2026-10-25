@@ -1,0 +1,26 @@
+<div id="upload-session" style="margin-top:22px" {% if busy %}hx-get="/collections/{{ collection.id }}/documents/session?ids={{ ids|join(',') }}" hx-trigger="every 1s" hx-swap="outerHTML"{% endif %}>
+  <div class="field-label" style="margin-bottom:10px">This session</div>
+  <div class="stack" style="gap:10px">
+    {% for doc in documents %}
+      {% set total = doc.steps|length %}
+      {% set running = (doc.steps | selectattr('status', 'equalto', 'running') | list | first) %}
+      <div class="card" style="padding:12px 14px">
+        <div class="row spread">
+          <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ doc.filename }}</strong>
+          {% if doc.status == 'ready' %}<span class="pill pill-green">Ready</span>
+          {% elif doc.status == 'failed' %}<span class="pill pill-red">Failed</span>
+          {% else %}<span class="pill pill-teal">{{ icon('loader-circle', 12, 'spinner') }}Step {{ [doc.progress + 1, total]|min }} of {{ total }}</span>{% endif %}
+        </div>
+        <div class="muted" style="font-size:12.5px;margin:4px 0 8px">
+          {% if doc.status == 'ready' %}{{ doc.chunks }} chunks, searchable in {{ collection.name }}
+          {% elif doc.status == 'failed' %}<span style="color:var(--red)">{{ doc.error }}</span>
+          {% else %}Step {{ [doc.progress + 1, total]|min }} of {{ total }}{% if running %}, {{ running.label }}{% endif %}{% endif %}
+        </div>
+        <div class="bar"><span style="width: {{ 100 if doc.status == 'ready' else ((doc.progress / total * 100) if total else 0) }}%"></span></div>
+        <div class="mini-steps">
+          {% for step in doc.steps %}<span class="mini-step {{ step.status }}">{% if step.status == 'running' %}{{ icon('loader-circle', 11) }}{% elif step.status == 'done' %}{{ icon('check', 11) }}{% elif step.status == 'failed' %}{{ icon('x', 11) }}{% endif %}{{ step.label }}{% if step.duration_ms is not none %} <span class="time">{{ step.duration_ms|duration }}</span>{% endif %}</span>{% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>

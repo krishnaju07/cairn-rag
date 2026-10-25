@@ -1,0 +1,18 @@
+{% import "macros.html" as ui %}
+<p class="muted" style="margin-bottom:16px">Every publish is saved as a numbered version. Collections keep using the version they were created with. Restoring copies a version into the draft; nothing is deleted.</p>
+<div class="stack">
+  {% for version in pipeline.versions %}
+    <div class="card" style="padding:14px">
+      <div class="row spread">
+        <div class="row"><strong>v{{ version.version }}</strong>{% if loop.first %}<span class="pill pill-teal">Latest</span>{% endif %}</div>
+        <span class="dim" style="font-size:12.5px">{{ version.created_at|timeago }}</span>
+      </div>
+      <div class="chips">{% for label in version.labels %}<span class="chip">{{ label }}</span>{% endfor %}</div>
+      <div style="margin-top:12px">
+        <button class="btn btn-sm" type="button" hx-post="/pipelines/{{ pipeline.id }}/restore/{{ version.version }}" hx-target="#builder" hx-swap="innerHTML" hx-boost="false" data-close-drawer>{{ icon('rotate-ccw', 13) }}Restore to draft</button>
+      </div>
+    </div>
+  {% else %}
+    <p class="dim">No versions yet. Publish the draft to create v1.</p>
+  {% endfor %}
+</div>

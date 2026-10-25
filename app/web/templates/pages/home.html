@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui %}
+{% block title %}Home · Cairn{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">Your documents. Answers you can trace.</h1>
+      <p class="page-sub">Upload files, process them with a pipeline you control, and ask questions. Every answer cites the pages it came from, and each citation opens the original page with the passage highlighted.</p>
+    </div>
+  </div>
+
+  {% if models.status == 'loading' %}
+    <div class="callout callout-info" style="margin-bottom:18px">{{ icon('loader-circle', 16, 'spinner') }}<span>{{ models.message }} The app keeps working; the first document or search waits for them.</span></div>
+  {% elif models.status == 'error' %}
+    <div class="callout callout-error" style="margin-bottom:18px">{{ icon('circle-alert', 16) }}<span>{{ models.message }}</span></div>
+  {% endif %}
+
+  <div class="stat-grid">
+    <div class="stat"><b>{{ stats.pipelines }}</b><span>Pipelines</span></div>
+    <div class="stat"><b>{{ stats.collections }}</b><span>Collections</span></div>
+    <div class="stat"><b>{{ stats.documents }}</b><span>Documents ready</span></div>
+    <div class="stat"><b>{{ stats.questions }}</b><span>Questions asked</span></div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">Get started</div>
+      <div class="checklist">
+        {% for item in checklist %}
+          <a class="check-row {{ 'done' if item.done }}" href="{{ item.href }}">
+            <span class="check-mark">{{ icon('check', 14) }}</span>
+            <div class="grow"><strong>{{ item.label }}</strong><div class="muted" style="font-size:12.5px">{{ item.hint }}</div></div>
+            {{ icon('chevron-right', 16) }}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Recent collections</div>
+      {% for item in recent %}
+        <a class="check-row" href="/collections/{{ item.id }}"><span class="dot tone-{{ item.tone }}"></span><div class="grow"><strong>{{ item.name }}</strong><div class="muted" style="font-size:12.5px">{{ item.ready }} document{{ '' if item.ready == 1 else 's' }} · {{ item.chunks }} chunks</div></div>{{ icon('chevron-right', 16) }}</a>
+      {% else %}
+        <p class="muted" style="padding:10px 0">Collections you create show up here.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

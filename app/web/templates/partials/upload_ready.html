@@ -1,0 +1,30 @@
+{% import "macros.html" as ui %}
+{% include "partials/upload_form.html" %}
+{% for error in errors %}
+  <div class="callout callout-error" style="margin-top:12px">{{ icon('circle-alert', 16) }}<span><strong>{{ error.filename }}</strong>: {{ error.message }}</span></div>
+{% endfor %}
+{% if staged %}
+  <form class="stack" style="margin-top:20px" hx-post="/collections/{{ collection.id }}/documents" hx-target="#upload-panel" hx-swap="innerHTML" hx-boost="false">
+    <div class="row spread"><strong>Ready to upload</strong><span class="dim">{{ staged|length }} of {{ staged|length + errors|length }}</span></div>
+    <div class="stack" style="gap:0">
+      {% for file in staged %}
+        <input type="hidden" name="stage_ids" value="{{ file.stage_id }}">
+        <div class="row spread" style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div class="row" style="min-width:0">{{ ui.file_badge(file.ext) }}
+            <div style="min-width:0"><div style="font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ file.filename }}</div>
+              <div class="muted" style="font-size:12.5px">{{ file.pages|plural('page' if file.paged else 'section') }} · {{ '{:,}'.format(file.tokens) }} tokens</div></div></div>
+          <span class="dim" style="font-size:12.5px">{{ file.size_bytes|filesize }}</span>
+        </div>
+      {% endfor %}
+    </div>
+    {{ ui.estimate_rows(combined, 'run') }}
+    {% if combined.llamaparse and pdf_pages %}
+      <div class="callout callout-warn">{{ icon('cloud', 16) }}<span>Text Extraction uses LlamaParse. <strong>{{ pdf_pages }} PDF page{{ '' if pdf_pages == 1 else 's' }}</strong> will be sent to LlamaCloud and billed in your LlamaCloud credits. Other file types stay on this machine.</span></div>
+    {% endif %}
+    <div class="row spread">
+      <button class="btn btn-primary" type="submit">Upload {{ staged|length }} file{{ '' if staged|length == 1 else 's' }}</button>
+      <span class="muted">{% if combined.costly %}Total {{ combined.usd|usd }}{% else %}No cost{% endif %}</span>
+    </div>
+    <p class="help dim" style="font-size:12px">Files run through <strong>{{ collection.pipeline_name }}</strong>, {{ steps }} steps. You can close this panel; processing continues. Scanned PDFs without a text layer are rejected.</p>
+  </form>
+{% endif %}

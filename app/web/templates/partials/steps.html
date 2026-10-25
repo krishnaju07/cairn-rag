@@ -1,0 +1,49 @@
+{% import "macros.html" as ui %}
+{% set broken = pipeline.problems | map(attribute='step_id') | list %}
+<div id="steps" class="steps" data-pipeline="{{ pipeline.id }}" {% if oob %}hx-swap-oob="outerHTML"{% endif %}>
+  {% if not pipeline.steps %}
+    <div class="empty" style="border:0">
+      <div class="icon-wrap">{{ icon('workflow', 20) }}</div>
+      <h3>An empty pipeline</h3>
+      <p>Add Text Extraction first. Each next step opens only where it works.</p>
+    </div>
+  {% endif %}
+  <div class="step-gap" data-gap="0"></div>
+  {% for step in pipeline.steps %}
+    {% set i = loop.index0 %}
+    <div class="step {{ 'selected' if step.id == selected }} {{ 'problem' if step.id in broken }}" draggable="true" data-label="{{ step.label }}"
+         data-id="{{ step.id }}" data-index="{{ i }}" data-slots="{{ step.slots|join(',') }}"
+         style="animation-delay: {{ i * 40 }}ms"
+>
+      <div class="step-select" hx-get="/pipelines/{{ pipeline.id }}/select?step={{ step.id }}" hx-target="#panel" hx-swap="outerHTML">
+      <span class="step-grip" title="Drag to reorder">{{ icon('grip-vertical', 16) }}</span>
+      <span class="step-num">{{ i + 1 }}</span>
+      <span class="step-icon">{{ icon(step.icon, 17) }}</span>
+      <div class="grow">
+        <div class="step-title">{{ step.label }}
+          {% if step.needs_setup %}<span class="pill pill-amber">Needs setup</span>{% endif %}
+          {% if step.costly and not step.needs_setup %}<span class="pill pill-orange">Costly</span>{% endif %}
+        </div>
+        <div class="step-sub">{{ step.summary }}</div>
+      </div>
+      {{ ui.category(step.category) }}
+      </div>
+      <div class="step-actions">
+        <button class="icon-btn" type="button" aria-label="Move up" {% if (i - 1) not in step.slots or i == 0 %}disabled{% endif %}
+                hx-post="/pipelines/{{ pipeline.id }}/steps/{{ step.id }}/move" hx-vals='{"to": {{ i - 1 }}}' hx-target="#builder" hx-swap="innerHTML" hx-boost="false">{{ icon('chevron-up', 16) }}</button>
+        <button class="icon-btn" type="button" aria-label="Move down" {% if (i + 1) not in step.slots or i == pipeline.steps|length - 1 %}disabled{% endif %}
+                hx-post="/pipelines/{{ pipeline.id }}/steps/{{ step.id }}/move" hx-vals='{"to": {{ i + 1 }}}' hx-target="#builder" hx-swap="innerHTML" hx-boost="false">{{ icon('chevron-down', 16) }}</button>
+        {% if step.required %}
+          <span class="icon-btn locked" title="Required in every pipeline">{{ icon('lock', 15) }}</span>
+        {% else %}
+          <button class="icon-btn" type="button" aria-label="Remove step" title="Remove step"
+                  hx-post="/pipelines/{{ pipeline.id }}/steps/{{ step.id }}/delete" hx-target="#builder" hx-swap="innerHTML" hx-boost="false">{{ icon('trash-2', 15) }}</button>
+        {% endif %}
+      </div>
+    </div>
+    <div class="step-gap" data-gap="{{ i + 1 }}"></div>
+  {% endfor %}
+  {% for step in pipeline.steps if step.needs_setup %}
+    <p class="setup-note">{{ step.label }} needs settings before documents can run through it.</p>
+  {% endfor %}
+</div>

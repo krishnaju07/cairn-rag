@@ -1,0 +1,14 @@
+<div class="chat-empty" id="chat-empty">
+  <div class="icon-wrap">{{ icon('message-square', 24) }}</div>
+  {% if collection.ready %}
+    <h3>Chat about {{ collection.name }}</h3>
+    <p class="muted">Answers come from the {{ collection.ready }} document{{ '' if collection.ready == 1 else 's' }} in this collection. Hover a number to preview the cited sentence, or click it to open the original page.</p>
+    <div class="suggestions">
+      {% for idea in suggestions %}<button class="suggestion" type="button" data-ask>{{ idea }}</button>{% endfor %}
+    </div>
+  {% else %}
+    <h3>Nothing to ask yet</h3>
+    <p class="muted">Upload a document first. Answers come only from the documents in this collection.</p>
+    <button class="btn btn-primary" hx-get="/collections/{{ collection.id }}/upload" hx-target="#drawer-body" hx-swap="innerHTML" data-drawer="Upload to {{ collection.name }}" data-wide>{{ icon('upload', 15) }}Upload files</button>
+  {% endif %}
+</div>

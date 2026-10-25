@@ -1,0 +1,30 @@
+<div id="builder-head" class="page-head" {% if oob %}hx-swap-oob="outerHTML"{% endif %}>
+  <div class="grow">
+    <div class="status-line">
+      <input class="title-input" name="name" value="{{ pipeline.name }}" aria-label="Pipeline name" maxlength="80" autocomplete="off"
+             hx-post="/pipelines/{{ pipeline.id }}/rename" hx-trigger="change" hx-swap="none" hx-boost="false">
+      {% if not pipeline.latest_version %}
+        <span class="pill pill-amber">Draft, not published yet</span>
+      {% elif pipeline.has_changes %}
+        <span class="pill pill-amber">Unpublished changes since v{{ pipeline.latest_version }}</span>
+      {% else %}
+        <span class="pill pill-teal">{{ icon('circle-check', 12) }}v{{ pipeline.latest_version }} published</span>
+      {% endif %}
+    </div>
+    <p class="page-sub">Test the draft on one file, then publish it as a numbered version. Collections use published versions, so edits stay in the draft until you publish.</p>
+  </div>
+  <div class="head-actions">
+    <span class="dim" style="font-size:12.5px">Draft saved</span>
+    <button class="btn" hx-get="/pipelines/{{ pipeline.id }}/test" hx-target="#drawer-body" hx-swap="innerHTML" data-drawer="Test pipeline">{{ icon('flask-conical', 15) }}Test</button>
+    <button class="btn btn-primary" hx-get="/pipelines/{{ pipeline.id }}/publish?step={{ selected or '' }}" hx-target="#modal-body" hx-swap="innerHTML" data-modal
+            {% if pipeline.problems or (pipeline.latest_version and not pipeline.has_changes) %}disabled{% endif %}>{{ icon('rocket', 15) }}Publish v{{ pipeline.latest_version + 1 }}</button>
+    <details class="menu">
+      <summary class="icon-btn" aria-label="More">{{ icon('ellipsis', 18) }}</summary>
+      <div class="menu-list">
+        <button type="button" hx-get="/pipelines/{{ pipeline.id }}/versions" hx-target="#drawer-body" hx-swap="innerHTML" data-drawer="Version history">{{ icon('git-branch', 14) }}Version history</button>
+        <button type="button" hx-post="/pipelines/{{ pipeline.id }}/duplicate" hx-swap="none" hx-boost="false">{{ icon('copy', 14) }}Duplicate</button>
+        <button type="button" class="danger" hx-post="/pipelines/{{ pipeline.id }}/delete" hx-swap="none" hx-boost="false">{{ icon('trash-2', 14) }}Delete pipeline</button>
+      </div>
+    </details>
+  </div>
+</div>

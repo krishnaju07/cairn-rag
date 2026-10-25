@@ -1,0 +1,28 @@
+{% include "partials/builder_head.html" %}
+
+{% if pipeline.problems %}
+  <div class="callout callout-error" style="margin-bottom:16px">
+    {{ icon('circle-alert', 16) }}
+    <div>
+      <strong>Fix before publishing</strong>
+      <ul>{% for problem in pipeline.problems %}<li>{{ problem.message }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+{% endif %}
+{% if pipeline.warnings %}
+  <div class="callout callout-warn" style="margin-bottom:16px">
+    {{ icon('triangle-alert', 16) }}
+    <div>{% for warning in pipeline.warnings %}<div>{{ warning.message }}</div>{% endfor %}</div>
+  </div>
+{% endif %}
+
+<div class="builder-grid">
+  <section>
+    <div class="builder-note">
+      <span id="builder-hint" data-default="Drag a step or use the arrows. While you drag, only the places where the step works open up.">Drag a step or use the arrows. While you drag, only the places where the step works open up.</span>
+      <button class="btn" hx-get="/pipelines/{{ pipeline.id }}/add" hx-target="#drawer-body" hx-swap="innerHTML" data-drawer="Add a step">{{ icon('plus', 15) }}Add step</button>
+    </div>
+    {% include "partials/steps.html" %}
+  </section>
+  {% include "partials/panel.html" %}
+</div>

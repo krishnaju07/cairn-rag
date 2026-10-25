@@ -1,0 +1,32 @@
+{% import "macros.html" as ui %}
+<div class="two-col">
+  <div class="stack">
+    <div class="card">
+      <div class="card-title">Pipeline version</div>
+      <p class="muted" style="margin-bottom:14px">Decides how this collection's documents are processed. Switching only affects new uploads; use Reprocess to apply it to existing documents.</p>
+      <form class="row" hx-post="/collections/{{ collection.id }}/processing" hx-target="#main" hx-select=".page" hx-swap="innerHTML" hx-boost="false">
+        <select class="select" name="pipeline_version">
+          {% for item in versions %}<option value="{{ item.id }}:{{ item.version }}" {% if item.id == collection.pipeline_id and item.version == collection.pipeline_version %}selected{% endif %}>{{ item.name }} · v{{ item.version }}</option>{% endfor %}
+        </select>
+        <button class="btn btn-primary" type="submit">Apply</button>
+      </form>
+    </div>
+    <div class="card">
+      <div class="row spread" style="margin-bottom:12px"><div class="card-title" style="margin:0">Steps in v{{ collection.pipeline_version }}</div><a class="link" href="/pipelines/{{ collection.pipeline_id }}">Open pipeline</a></div>
+      <div class="stack" style="gap:8px">
+        {% for step in steps %}
+          <div class="row" style="padding:8px 0;border-bottom:1px solid var(--border)">
+            <span class="step-icon">{{ icon(step.definition.icon, 16) }}</span>
+            <div class="grow"><strong>{{ step.definition.label }}</strong><div class="muted" style="font-size:12.5px">{{ step.summary }}</div></div>
+            {{ ui.category(step.definition.category) }}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Reprocess documents</div>
+    <p class="muted" style="margin-bottom:14px">Runs every ready or failed document through the current version again. Embeddings are recomputed and the index is rebuilt for each file.</p>
+    <button class="btn" type="button" hx-post="/collections/{{ collection.id }}/reprocess" hx-swap="none" hx-boost="false">{{ icon('rotate-ccw', 14) }}Reprocess all documents</button>
+  </div>
+</div>

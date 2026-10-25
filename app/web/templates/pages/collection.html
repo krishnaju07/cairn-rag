@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui %}
+{% block title %}{{ collection.name }} · Cairn{% endblock %}
+{% block content %}
+<div class="page" data-collection-drop="{{ collection.id }}">
+  {{ ui.crumbs([('Collections', '/collections'), (collection.name, None)]) }}
+  <div class="page-head" style="margin-bottom:14px">
+    <div>
+      <h1 class="page-title"><span class="dot tone-{{ collection.tone }}" style="width:12px;height:12px;border-radius:4px;display:inline-block;margin-right:10px"></span>{{ collection.name }}</h1>
+      <p class="page-sub">{{ collection.description or 'No description yet. Add one in Settings.' }}</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn btn-primary" hx-get="/collections/{{ collection.id }}/upload" hx-target="#drawer-body" hx-swap="innerHTML" data-drawer="Upload to {{ collection.name }}" data-wide>{{ icon('upload', 15) }}Upload</button>
+    </div>
+  </div>
+
+  <nav class="tabs" style="margin-bottom:22px">
+    {% for key, label, glyph in tabs %}
+      <a class="tab {{ 'active' if tab == key }}" href="/collections/{{ collection.id }}{{ '' if key == 'documents' else '/' ~ key }}">{{ icon(glyph, 15) }}{{ label }}{% if key == 'documents' %} <span class="count-badge">{{ collection.ready }}</span>{% endif %}</a>
+    {% endfor %}
+  </nav>
+
+  {% include "partials/tab_" ~ tab ~ ".html" %}
+  <div class="drop-overlay" id="drop-overlay">{{ icon('upload', 28) }}<strong>Drop files to upload to {{ collection.name }}</strong></div>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{"question": "What is the calibration interval for sensor model KX-9?", "doc": "Annual Technical Report 2026.pdf", "contains": "every 72 hours", "page": 24}
+{"question": "Which site had the highest uptime in 2025?", "doc": "Annual Technical Report 2026.pdf", "contains": "99.6%", "page": 20, "says": ["Lisbon"]}
+{"question": "Who manages the Pune site?", "doc": "Annual Technical Report 2026.pdf", "contains": "Arjun Nair", "page": 20}
+{"question": "How many days of paid leave do field engineers get from 1 January 2026?", "doc": "Annual Technical Report 2026.pdf", "contains": "increases to 18 days", "page": 16, "says": ["18"]}
+{"question": "How many days of paid leave did field engineers get under the 2025 policy?", "doc": "Annual Technical Report 2026.pdf", "contains": "12 days of paid leave", "page": 16, "says": ["12"]}
+{"question": "What is the torque for fastener NX-4471-C?", "doc": "Annual Technical Report 2026.pdf", "contains": "52 Nm", "page": 24}
+{"question": "Within how many days must expense reimbursement requests be filed?", "doc": "Annual Technical Report 2026.pdf", "contains": "within 45 days", "page": 12}
+{"question": "Do the efficiency figures include the Oslo pilot?", "doc": "Annual Technical Report 2026.pdf", "contains": "exclude the Oslo pilot", "page": 20, "says": ["exclude", "not include"]}
+{"question": "Who is the safety officer for the Lisbon site?", "doc": "Annual Technical Report 2026.pdf", "contains": "Carlos Mendes", "page": 32}
+{"question": "What was Q4 2025 revenue?", "doc": "Annual Technical Report 2026.pdf", "contains": "5.67", "page": 20, "says": ["5.67"]}
+{"question": "What is the MTBF of the Alpha-3 unit?", "doc": "Annual Technical Report 2026.pdf", "contains": "18,500 hours", "page": 8}
+{"question": "What roles make up the incident response team?", "doc": "Annual Technical Report 2026.pdf", "contains": "communications lead", "page": 28}
+{"question": "What is the recovery point objective?", "doc": "Annual Technical Report 2026.pdf", "contains": "15 minutes", "page": 28}
+{"question": "What period does the report cover?", "doc": "Annual Technical Report 2026.pdf", "contains": "1 January 2025 to 31 December 2025", "page": 1}
+{"question": "What is the calibration interval for sensor model KX-7?", "answerable": false}
+{"question": "What is the torque for fastener NX-4471-D?", "answerable": false}
+{"question": "Who manages the Oslo site?", "answerable": false}
+{"question": "What was Q1 2026 revenue?", "answerable": false}
+{"question": "Who is the chief executive officer?", "answerable": false}

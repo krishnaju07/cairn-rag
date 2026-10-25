@@ -1,0 +1,28 @@
+{% import "macros.html" as ui %}
+{% if error %}
+  <div class="callout callout-error" style="margin-bottom:14px">{{ icon('circle-alert', 16) }}<span>{{ error }}</span></div>
+  {% include "partials/test_form.html" %}
+{% else %}
+  <div class="card" style="padding:14px;margin-bottom:16px">
+    <div class="row">
+      {{ ui.file_badge(staged.ext) }}
+      <div class="grow">
+        <div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ staged.filename }}</div>
+        <div class="muted" style="font-size:12.5px">{{ staged.size_bytes|filesize }} · {{ staged.pages|plural('page' if staged.paged else 'section') }} · {{ '{:,}'.format(staged.tokens) }} tokens</div>
+      </div>
+    </div>
+  </div>
+  <form class="stack" hx-post="/pipelines/{{ pipeline.id }}/test/run" hx-target="#test-results" hx-swap="innerHTML" hx-boost="false">
+    <input type="hidden" name="stage_id" value="{{ staged.stage_id }}">
+    {{ ui.estimate_rows(figures, 'include') }}
+    {% if figures.llamaparse and staged.ext == 'pdf' %}
+      <div class="callout callout-warn">{{ icon('cloud', 16) }}<span>Text Extraction uses LlamaParse, so this test sends the PDF ({{ staged.pages }} page{{ '' if staged.pages == 1 else 's' }}) to LlamaCloud and uses your LlamaCloud credits.</span></div>
+    {% endif %}
+    <div class="row">
+      <button class="btn btn-primary" type="submit">{{ icon('play', 14) }}Run test</button>
+      <button class="btn" type="button" hx-get="/pipelines/{{ pipeline.id }}/test" hx-target="#drawer-body" hx-swap="innerHTML" hx-boost="false">Change file</button>
+    </div>
+    <div class="loading-line">{{ icon('loader-circle', 16, 'spinner') }}Running the draft. The first run can take a few minutes while local models download.</div>
+  </form>
+  <div id="test-results" style="margin-top:18px"></div>
+{% endif %}

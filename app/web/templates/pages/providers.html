@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Providers · Cairn{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">Providers</h1>
+      <p class="page-sub">Choose what writes answers and add keys for hosted services. Embedding, search and reranking always run on this machine; only the model that writes text can be hosted, and each collection picks its own.</p>
+    </div>
+  </div>
+  <div id="providers" class="stack">{% include "partials/providers_panel.html" %}</div>
+</div>
+{% endblock %}

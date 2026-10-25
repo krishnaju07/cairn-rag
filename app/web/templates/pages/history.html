@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui %}
+{% block title %}History · Cairn{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-head"><div><h1 class="page-title">History</h1><p class="page-sub">The last 100 questions asked in the app or through API keys, with the sources each answer used.</p></div></div>
+  {% if items %}
+    <div class="stack" style="gap:10px">
+      {% for item in items %}
+        <details class="history-item" style="animation: rise .35s var(--ease) {{ loop.index0 * 25 }}ms backwards">
+          <summary>
+            {% if item.answered %}<span class="pill pill-green">Answered</span>{% else %}<span class="pill pill-amber">No support found</span>{% endif %}
+            <strong class="grow" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ item.question }}</strong>
+            <span class="pill pill-grey">{{ item.collection_name }}</span>
+            {% if item.source == 'api' %}<span class="pill pill-blue">API</span>{% endif %}
+            <span class="dim" style="font-size:12.5px;white-space:nowrap">{{ item.created_at|timeago }}</span>
+          </summary>
+          <div class="history-body">
+            <p style="line-height:1.7">{{ item.answer }}</p>
+            <div class="sources-row">
+              {% for source in item.citations %}
+                <button class="source-card" type="button" hx-get="/sources/{{ source.document_id }}?page={{ source.page_start }}&chunk={{ source.chunk_id }}&n={{ source.n }}" hx-target="#drawer-body" hx-swap="innerHTML" data-drawer="Source" data-wide>
+                  <span class="num">{{ source.n }}</span><div style="min-width:0"><div class="name">{{ source.filename }}</div><div class="where">{{ source.label }}{% if source.found_by %} · {{ source.found_by }}{% endif %}</div></div>
+                </button>
+              {% endfor %}
+            </div>
+            <div class="dim" style="font-size:12px">{{ item.model.replace(':', ' · ', 1) }} · {{ item.mode }} · {{ item.latency_ms|duration }}</div>
+          </div>
+        </details>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% call ui.empty('history', 'No questions yet', 'Ask something in a collection and it shows up here.') %}{% endcall %}
+  {% endif %}
+</div>
+{% endblock %}

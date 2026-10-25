@@ -1,0 +1,18 @@
+<form class="dialog-body" hx-post="/pipelines/{{ pipeline.id }}/publish" hx-target="#builder" hx-swap="innerHTML" hx-boost="false" data-close-modal>
+  <input type="hidden" name="step" value="{{ selected or '' }}">
+  <div>
+    <h3 style="font-size:18px">Publish {{ pipeline.name }} v{{ pipeline.latest_version + 1 }}</h3>
+    <p class="muted" style="margin-top:6px">
+      {% if users %}
+        {{ users }} collection{{ '' if users == 1 else 's' }} use{{ 's' if users == 1 else '' }} this pipeline. They keep their current version until you switch them in the Processing tab.
+      {% else %}
+        No collection uses this pipeline yet. You can choose it from a collection's Processing tab.
+      {% endif %}
+    </p>
+    <p class="muted" style="margin-top:6px">Published versions are numbered and can be restored to the draft at any time.</p>
+  </div>
+  <div class="dialog-actions">
+    <button class="btn" type="button" data-close-modal>Cancel</button>
+    <button class="btn btn-primary" type="submit">Publish</button>
+  </div>
+</form>

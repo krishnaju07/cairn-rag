@@ -1,0 +1,13 @@
+<div class="stack">
+  <form class="search-bar" hx-post="/collections/{{ collection.id }}/search/run" hx-target="#results" hx-swap="innerHTML" hx-indicator="#search-loading" hx-boost="false">
+    <div class="field"><label for="s-query">Search passages</label>
+      <div class="input-icon">{{ icon('search', 15) }}<input class="input" id="s-query" name="query" placeholder="How many vacation days do new employees get?" autocomplete="off" required></div></div>
+    <div class="field"><label for="s-mode">Find by</label>
+      <select class="select" id="s-mode" name="mode">{% for key, (label, hint) in mode_labels.items() %}<option value="{{ key }}" {% if key == collection.retrieval_mode %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="s-k">Results</label><input class="input" id="s-k" type="number" name="top_k" value="{{ collection.top_k }}" min="1" max="20"></div>
+    <button class="btn btn-primary" type="submit">{{ icon('search', 15) }}Search</button>
+  </form>
+  <p class="muted" style="font-size:12.5px">Shows the matching passages with their scores and no generated answer. The same results are available at <span class="mono">POST /api/collections/{{ collection.id }}/search</span>.</p>
+  <div class="loading-line" id="search-loading">{{ icon('loader-circle', 16, 'spinner') }}Searching…</div>
+  <div id="results" class="stack"></div>
+</div>

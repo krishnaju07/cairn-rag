@@ -1,0 +1,53 @@
+{% import "macros.html" as ui %}
+{% if error %}
+  <div class="callout callout-error">{{ icon('circle-alert', 16) }}<span>{{ error }}</span></div>
+{% else %}
+  <div class="source-view">
+    <div class="source-meta">
+      {% if n %}<span class="num-badge">{{ n }}</span>{% endif %}
+      {{ ui.file_badge(document.ext) }}
+      <div class="grow" style="min-width:0">
+        <div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ document.filename }}</div>
+        <div class="muted" style="font-size:12.5px">{{ 'Page' if paged else 'Section' }} {{ page }} of {{ page_count }}{% if found %} · {{ found }}{% endif %}</div>
+      </div>
+    </div>
+
+    {% if image %}
+      <div class="page-frame" id="page-frame">
+        <img src="{{ image }}" alt="Page {{ page }} of {{ document.filename }}" loading="eager">
+        {% for rect in rects %}<span class="hl {{ 'strong' if rect.strong else 'soft' }}" style="left:{{ rect.x }}%;top:{{ rect.y }}%;width:{{ rect.w }}%;height:{{ rect.h }}%"></span>{% endfor %}
+      </div>
+      {% if not rects and chunk %}<div class="callout callout-info">{{ icon('info', 16) }}<span>{% if document.meta.extractor == 'llamaparse' %}This document was read with LlamaParse, so the exact words cannot be outlined on the page image. The cited passage is shown below.{% elif span %}This document was processed before the page layout was improved, so the outline is shown in the passage below. Reprocess the document to restore it on the page.{% else %}The cited passage is on another page of this document. Use Previous or Next to move to it.{% endif %}</span></div>{% endif %}
+    {% else %}
+      <div class="text-page" id="page-frame">{% for part in segments %}{% if part.level %}<mark class="{{ part.level }}">{{ part.text }}</mark>{% else %}{{ part.text }}{% endif %}{% endfor %}</div>
+    {% endif %}
+
+    {% if chunk and chunk.kind == 'chunk' %}
+      <div>
+        <div class="field-label" style="margin-bottom:6px">Cited passage</div>
+        <div class="passage">{{ chunk.text }}</div>
+      </div>
+    {% elif chunk and chunk.kind == 'abstract' %}
+      <div class="callout callout-warn">{{ icon('sparkles', 16) }}<span>This is an AI-written abstract of the whole document, not a passage from it. Answers never cite it.</span></div>
+      <div class="passage">{{ chunk.text }}</div>
+    {% endif %}
+
+    <div class="pager">
+      {% if chunk_number %}
+        <span class="dim" style="font-size:12.5px">Chunk {{ chunk_number }} of {{ chunk_total }}</span>
+        <div class="row">
+          <button class="btn btn-sm" type="button" {% if not previous %}disabled{% endif %} {% if previous %}hx-get="/sources/{{ document.id }}?page={{ previous.page_start }}&chunk={{ previous.id }}" hx-target="#drawer-body" hx-swap="innerHTML" hx-boost="false"{% endif %}>{{ icon('arrow-left', 13) }}Previous</button>
+          <button class="btn btn-sm" type="button" {% if not next %}disabled{% endif %} {% if next %}hx-get="/sources/{{ document.id }}?page={{ next.page_start }}&chunk={{ next.id }}" hx-target="#drawer-body" hx-swap="innerHTML" hx-boost="false"{% endif %}>Next{{ icon('arrow-right', 13) }}</button>
+        </div>
+      {% else %}
+        <span class="dim" style="font-size:12.5px">{{ 'Page' if paged else 'Section' }} {{ page }} of {{ page_count }}</span>
+      {% endif %}
+    </div>
+    {% if chunk and chunk.page_end > chunk.page_start %}<p class="dim" style="font-size:12px">This passage continues on {{ 'page' if paged else 'section' }} {{ chunk.page_end }}.</p>{% endif %}
+
+    <div class="row">
+      <a class="btn btn-sm" href="/documents/{{ document.id }}/file" hx-boost="false">{{ icon('upload', 13, 'flip') }}Download file</a>
+      <a class="btn btn-sm" href="/collections/{{ document.collection_id }}/documents/{{ document.id }}" hx-boost="false">Document details</a>
+    </div>
+  </div>
+{% endif %}

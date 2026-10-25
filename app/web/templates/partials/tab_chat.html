@@ -1,0 +1,29 @@
+<section class="chat" id="chat" data-collection="{{ collection.id }}" data-mode="{{ collection.retrieval_mode }}" data-history='{{ history|tojson }}'>
+  <div class="chat-bar">
+    <div class="row" style="gap:8px">
+      <span class="pill pill-grey">{{ icon('file-text', 12) }}{{ collection.ready }} document{{ '' if collection.ready == 1 else 's' }}</span>
+      <span class="pill pill-grey">{{ icon('cpu', 12) }}{{ collection.answer_model.replace(':', ' · ', 1) if collection.answer_model != 'extractive' else 'Extractive, no model' }}</span>
+    </div>
+    <button class="btn btn-sm" id="new-chat" type="button" hidden>{{ icon('plus', 13) }}New chat</button>
+  </div>
+
+  <div class="chat-scroll" id="messages">
+    {% include "partials/chat_empty.html" %}
+  </div>
+  <button class="jump" id="jump" type="button" hidden aria-label="Jump to the latest message">{{ icon('arrow-down', 16) }}</button>
+  <template id="chat-empty-template">{% include "partials/chat_empty.html" %}</template>
+
+  <div class="composer">
+    <form id="composer" autocomplete="off" hx-boost="false">
+      <textarea id="question" rows="1" maxlength="2000" placeholder="Ask a question about {{ collection.name }}" {% if not collection.ready %}disabled{% endif %}></textarea>
+      <label class="mode-pick" title="How passages are found for this question">
+        {{ icon('search', 13) }}
+        <select id="mode" aria-label="How passages are found">
+          {% for key, (label, hint) in mode_labels.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+        </select>
+      </label>
+      <button class="send" type="submit" aria-label="Send" {% if not collection.ready %}disabled{% endif %}>{{ icon('arrow-up', 18) }}</button>
+    </form>
+    <p class="composer-note">Answers come only from your documents. Enter to send, Shift+Enter for a new line.</p>
+  </div>
+</section>

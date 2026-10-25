@@ -1,0 +1,103 @@
+{% import "macros.html" as ui %}
+{% set sel = (pipeline.steps | selectattr('id', 'equalto', selected) | list | first) if selected else none %}
+<aside id="panel" class="panel">
+{% if sel %}
+  {% set d = defs[sel.type] %}
+  {% set position = pipeline.steps.index(sel) %}
+  <div class="panel-head">
+    <span class="step-icon">{{ icon(sel.icon, 16) }}</span>
+    <h3>{{ sel.label }}</h3>
+    <span class="grow"></span>
+    {{ ui.category(sel.category) }}
+  </div>
+  <div class="tabs">
+    <button class="tab {{ 'active' if tab == 'settings' }}" type="button" hx-get="/pipelines/{{ pipeline.id }}/select?step={{ sel.id }}&tab=settings" hx-target="#panel" hx-swap="outerHTML">Settings</button>
+    <button class="tab {{ 'active' if tab == 'guide' }}" type="button" hx-get="/pipelines/{{ pipeline.id }}/select?step={{ sel.id }}&tab=guide" hx-target="#panel" hx-swap="outerHTML">{{ icon('book-open', 14) }}Guide</button>
+  </div>
+
+  <div class="panel-body">
+  {% if tab == 'guide' %}
+    <div class="rules">
+      <strong>Step {{ position + 1 }} of {{ pipeline.steps|length }}. {% if sel.slots|length == 1 %}This is the only place it works right now.{% else %}It works in {{ sel.slots|length }} places.{% endif %}</strong>
+      {% for rule in sel.rules %}
+        <div class="rule {{ 'ok' if rule.ok else 'bad' }}">{{ icon('check' if rule.ok else 'x', 14) }}<span>{{ rule.text }}</span></div>
+      {% endfor %}
+    </div>
+    <div>
+      {% for key, title in (('what', 'What it does'), ('when', 'When to use it'), ('how', 'How it works'), ('config', 'Configuration guide'), ('tips', 'Tips')) %}
+        {% if d.guide.get(key) %}
+          <details class="accordion" {% if loop.first %}open{% endif %}>
+            <summary>{{ title }}{{ icon('chevron-down', 15) }}</summary>
+            <p>{{ d.guide[key] }}</p>
+          </details>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">{{ d.guide.what }}</p>
+
+    {% if sel.needs_setup %}
+      <div class="callout callout-warn">{{ icon('triangle-alert', 16) }}<span>{% if sel.type == 'extract' %}Add LLAMA_CLOUD_API_KEY to .env to use LlamaParse, or turn OCR off.{% else %}Needs one setting before it can run. Choose a model below.{% endif %}</span></div>
+    {% endif %}
+
+    {% if sel.costly %}
+      {% set est = (pipeline.reference_estimate['items'] | selectattr('step_id', 'equalto', sel.id) | list | first) %}
+      <div class="estimate-chip">
+        {{ icon('zap', 14) }}
+        {% if est and est.ready %}
+          Typical 10-page document: {{ '{:,}'.format(est.input_tokens) }} tokens in, up to {{ '{:,}'.format(est.output_tokens) }} out ·
+          {% if est.local %}free, runs locally{% elif est.free %}free hosted tier{% else %}about {{ est.usd|usd }}{% endif %}
+        {% else %}
+          Costly step. Choose a model to see an estimate.
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% if d.fields %}
+      <form class="stack" hx-post="/pipelines/{{ pipeline.id }}/steps/{{ sel.id }}/settings" hx-trigger="change, input changed delay:600ms"
+            hx-target="#steps" hx-swap="outerHTML" hx-sync="this:replace" hx-boost="false">
+        {% for f in d.fields %}
+          {% set value = sel.settings[f.key] %}
+          {% if f.type == 'toggle' %}
+            <div class="field">
+              <label class="switch"><input type="checkbox" name="{{ f.key }}" {% if value %}checked{% endif %}><span class="track"></span><span class="field-label">{{ f.label }}</span></label>
+              {% if f.help %}<span class="help">{{ f.help }}</span>{% endif %}
+            </div>
+          {% else %}
+            <div class="field">
+              <label for="f-{{ f.key }}">{{ f.label }}{% if f.required %} <span class="dim">*</span>{% endif %}</label>
+              {% if f.type == 'number' %}
+                <input class="input" id="f-{{ f.key }}" type="number" name="{{ f.key }}" value="{{ value }}" min="{{ f.min }}" max="{{ f.max }}">
+              {% elif f.type == 'select' %}
+                <select class="select" id="f-{{ f.key }}" name="{{ f.key }}">
+                  {% for option in f.options %}<option value="{{ option.value }}" {% if option.value == value %}selected{% endif %}>{{ option.label }}</option>{% endfor %}
+                </select>
+                {% for option in f.options %}{% if option.value == value and option.hint %}<span class="help">{{ option.hint }}</span>{% endif %}{% endfor %}
+              {% elif f.type == 'textarea' %}
+                <textarea class="textarea" id="f-{{ f.key }}" name="{{ f.key }}" rows="7">{{ value }}</textarea>
+              {% elif f.type == 'model' %}
+                {{ ui.model_select(f.key, models, value, with_extractive=False, only_llm=True) }}
+                {% for provider in models if provider.llm and not provider.available %}<span class="help">{{ provider.label }}: {{ provider.reason }}</span>{% endfor %}
+              {% endif %}
+              {% if f.help and f.type != 'select' %}<span class="help">{{ f.help }}</span>{% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </form>
+    {% else %}
+      <p class="dim">This step has no settings. {{ d.guide.config }}</p>
+    {% endif %}
+
+    {% if sel.type == 'extract' %}
+      <div class="field">
+        <span class="field-label">Formats</span>
+        <div class="row" style="flex-wrap:wrap;gap:6px">{% for fmt in ('PDF', 'DOCX', 'TXT', 'MD', 'CSV') %}<span class="chip">{{ fmt }}</span>{% endfor %}</div>
+        <span class="help">The format is detected from each file.</span>
+      </div>
+    {% endif %}
+  {% endif %}
+  </div>
+{% else %}
+  <div class="panel-empty">{{ icon('panel-right-open', 24) }}<p style="margin-top:10px">Select a step to see its settings and guide.</p></div>
+{% endif %}
+</aside>

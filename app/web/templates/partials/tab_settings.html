@@ -1,0 +1,60 @@
+{% import "macros.html" as ui %}
+<div class="settings-layout">
+  <nav class="subnav">
+    {% for key, label in sections %}<a class="{{ 'active' if section == key }}" href="/collections/{{ collection.id }}/settings?section={{ key }}">{{ label }}</a>{% endfor %}
+    <button class="danger-link" type="button" hx-get="/collections/{{ collection.id }}/settings?section=delete" hx-target="#settings-body" hx-select="#settings-body" hx-swap="outerHTML" hx-boost="false">Delete collection</button>
+  </nav>
+
+  <div class="card" id="settings-body" style="max-width:760px">
+    {% if section == 'general' %}
+      <form class="stack" hx-post="/collections/{{ collection.id }}/settings/general" hx-swap="none" hx-boost="false">
+        <p class="muted">Name and describe the collection. The description helps people find the right one.</p>
+        <div class="field"><label for="g-name">Name</label><input class="input" id="g-name" name="name" value="{{ collection.name }}" required></div>
+        <div class="field"><label for="g-desc">Description</label><input class="input" id="g-desc" name="description" value="{{ collection.description }}" placeholder="What goes in it"></div>
+        <div class="row" style="justify-content:flex-end"><button class="btn btn-primary" type="submit">Save</button></div>
+      </form>
+
+    {% elif section == 'search' %}
+      <form class="stack" hx-post="/collections/{{ collection.id }}/settings/search" hx-swap="none" hx-boost="false" data-search-settings>
+        <p class="muted">How passages are found in this collection: in the Search tab, for the answers in Chat, and for API calls. No model is needed.</p>
+        <div class="field"><span class="field-label">Search by</span>{{ ui.mode_cards(mode_labels, collection.retrieval_mode) }}</div>
+        <div class="field">
+          <label for="g-k">Sources per answer: <output id="g-k-out">{{ collection.top_k }}</output></label>
+          <input class="range" id="g-k" type="range" name="top_k" min="1" max="20" value="{{ collection.top_k }}" data-output="g-k-out">
+          <span class="help">The best passages given to the model with each question. More give more context and cost more tokens.</span>
+        </div>
+        <div class="field">
+          {% set effective = collection.min_relevance if collection.min_relevance is not none else recommended[collection.retrieval_mode] %}
+          <label for="g-min">Minimum relevance: <output id="g-min-out">{{ '%.2f'|format(effective) }}</output></label>
+          <input class="range" id="g-min" type="range" name="min_relevance" min="0" max="1" step="0.01" value="{{ effective }}" data-output="g-min-out" data-decimals="2">
+          <input type="hidden" name="use_recommended" value="{{ '1' if collection.min_relevance is none else '' }}">
+          <span class="help">Recommended for {{ mode_names[collection.retrieval_mode] }}: <span id="g-min-rec">{{ '%.2f'|format(recommended[collection.retrieval_mode]) }}</span>. {% if recommended[collection.retrieval_mode] == 0 %}Passages scoring below it are left out. By default none are, because the model that writes the answer decides when the passages do not support one.{% else %}Passages scoring below it are left out, and when none pass the answer says it found no support.{% endif %} <a class="link" href="#" data-use-recommended data-recommended='{{ recommended|tojson }}'>Use recommended</a></span>
+        </div>
+        <div class="callout callout-info">{{ icon('info', 16) }}<div><strong>How passages are found</strong><div>{{ mode_labels[collection.retrieval_mode][1] }}</div></div></div>
+        <div class="row" style="justify-content:flex-end"><button class="btn btn-primary" type="submit">Save</button></div>
+      </form>
+
+    {% elif section == 'answers' %}
+      <form class="stack" hx-post="/collections/{{ collection.id }}/settings/answers" hx-swap="none" hx-boost="false">
+        <p class="muted">How Chat writes its answers, for everyone who asks in this collection. Each answer is written only from the passages found with the Search settings.</p>
+        <div class="field"><label for="a-model">Model</label>{{ ui.model_select('answer_model', models, collection.answer_model, with_extractive=True) }}
+          <span class="help">Ollama and extractive stay on this machine. NVIDIA (free tier) and Anthropic (paid) are hosted: they receive your question and the retrieved passages. {% for provider in models if not provider.available and provider.id != 'extractive' %}{{ provider.label }}: {{ provider.reason }} {% endfor %}</span></div>
+        <div class="field"><label for="a-instructions">Instructions</label>
+          <textarea class="textarea" id="a-instructions" name="instructions" rows="5" style="font-family:var(--font);font-size:13.5px" placeholder="Answer in a friendly tone and keep it under 120 words.">{{ collection.instructions }}</textarea>
+          <span class="help">Added to the rules every answer follows. Answers can only use the retrieved passages and must cite them, whatever you write here.</span></div>
+        <div class="field" style="max-width:220px"><label for="a-max">Max answer tokens</label><input class="input" id="a-max" type="number" name="max_answer_tokens" value="{{ collection.max_answer_tokens }}" min="100" max="4000"></div>
+        <div class="row" style="justify-content:flex-end">
+          <button class="btn" type="button" hx-post="/providers/test" hx-include="#a-model, [name=answer_model]" hx-swap="none" hx-boost="false">Test connection</button>
+          <button class="btn btn-primary" type="submit">Save</button>
+        </div>
+      </form>
+
+    {% else %}
+      <div class="stack danger-zone">
+        <div class="card-title" style="color:var(--red)">Delete collection</div>
+        <p class="muted">Deletes {{ collection.documents }} document{{ '' if collection.documents == 1 else 's' }}, their {{ collection.chunks }} chunks and every API key for this collection. The pipeline and its versions stay. This cannot be undone.</p>
+        <div><button class="btn btn-danger" type="button" hx-post="/collections/{{ collection.id }}/delete" hx-swap="none" hx-boost="false">{{ icon('trash-2', 14) }}Delete {{ collection.name }}</button></div>
+      </div>
+    {% endif %}
+  </div>
+</div>

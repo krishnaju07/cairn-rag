@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui %}
+{% block title %}{{ pipeline.name }} · Pipelines · Cairn{% endblock %}
+{% block content %}
+<div class="page wide">
+  {{ ui.crumbs([('Pipelines', '/pipelines'), (pipeline.name, None)]) }}
+  <div id="builder">{% include "partials/builder.html" %}</div>
+</div>
+{% endblock %}
