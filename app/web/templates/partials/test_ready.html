@@ -8,7 +8,7 @@
       {{ ui.file_badge(staged.ext) }}
       <div class="grow">
         <div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ staged.filename }}</div>
-        <div class="muted" style="font-size:12.5px">{{ staged.size_bytes|filesize }} · {{ staged.pages|plural('page' if staged.paged else 'section') }} · {{ '{:,}'.format(staged.tokens) }} tokens</div>
+        <div class="muted" style="font-size:12.5px">{{ staged.size_bytes|filesize }} · {% if staged.media == 'audio' %}{{ staged.seconds|clock }} of audio · about {{ '{:,}'.format(staged.tokens) }} tokens{% elif staged.media == 'image' %}Image · about {{ '{:,}'.format(staged.tokens) }} tokens{% else %}{{ staged.pages|plural('page' if staged.paged else 'section') }} · {{ '{:,}'.format(staged.tokens) }} tokens{% endif %}</div>
       </div>
     </div>
   </div>

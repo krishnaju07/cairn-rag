@@ -205,11 +205,23 @@ def switch_version(request: Request, collection_id: str, pipeline_version: str =
     return toast(frame(request, collection_id, "processing", **processing_context(collection_id)), message, kind)
 
 
-@router.post("/{collection_id}/reprocess")
-def reprocess_all(collection_id: str) -> Response:
+@router.post("/{collection_id}/reprocess", response_class=HTMLResponse)
+def reprocess_all(
+    request: Request, collection_id: str, redirect: str = Form(""), q: str = Form(""), status: str = Form("")
+) -> Response:
     count = library.reprocess(collection_id)
-    response = toast(Response(status_code=204), f"Reprocessing {count} document{'' if count == 1 else 's'}", "info")
-    return response
+    message = f"Reprocessing {count} document{'' if count == 1 else 's'}"
+    if redirect:
+        response = Response(status_code=204)
+        response.headers["HX-Redirect"] = f"/collections/{collection_id}"
+        return toast(response, message, "info")
+    response = render(
+        request,
+        "partials/documents_table.html",
+        collection=library.get_collection(collection_id),
+        **documents_context(collection_id, q, status),
+    )
+    return toast(response, message, "info")
 
 
 @router.get("/{collection_id}/documents/table", response_class=HTMLResponse)

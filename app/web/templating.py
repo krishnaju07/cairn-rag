@@ -12,7 +12,8 @@ from markupsafe import Markup
 
 from .. import library
 from ..config import MAX_UPLOAD_MB
-from ..ingestion.extract import ExtractionError
+from ..ingestion.extract import SUPPORTED, ExtractionError
+from ..ingestion.media import clock
 
 WEB_DIR = Path(__file__).parent
 ICON_DIR = WEB_DIR / "static" / "icons"
@@ -74,7 +75,8 @@ def plural(count: int, word: str) -> str:
 
 
 templates.env.globals["icon"] = icon
-templates.env.filters.update(timeago=timeago, filesize=filesize, duration=duration, usd=usd, plural=plural)
+templates.env.globals["accepted_types"] = ",".join(f".{ext}" for ext in sorted(SUPPORTED))
+templates.env.filters.update(timeago=timeago, filesize=filesize, duration=duration, usd=usd, plural=plural, clock=clock)
 
 
 def render(request: Request, name: str, status_code: int = 200, **context: Any) -> HTMLResponse:

@@ -4,11 +4,14 @@ import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
+
+from . import media
 
 PAGE_CHARS = 3000
 CSV_ROWS_PER_PAGE = 40
-SUPPORTED = {"pdf", "docx", "txt", "md", "csv"}
+SUPPORTED = {"pdf", "docx", "txt", "md", "csv"} | media.AUDIO | media.IMAGE
+SUPPORTED_NAMES = "PDF, DOCX, TXT, MD, CSV, images (PNG, JPG, WEBP, BMP, TIFF) and audio (MP3, WAV, M4A, FLAC, OGG, AAC, WEBM)"
 _SENTENCE_END = (".", "!", "?", ":", '"', "\u201d")
 ROW_TOLERANCE = 2.5
 CELL_CHARS = 32
@@ -31,15 +34,26 @@ class ScannedPdfError(ExtractionError):
 class Extraction:
     pages: list[str]
     paged: bool
-    meta: dict[str, str] = field(default_factory=dict)
+    meta: dict[str, Any] = field(default_factory=dict)
+    layouts: list[dict[str, Any]] = field(default_factory=list)
 
 
 def extract(
-    path: Path, ext: str, timeout_s: Optional[float] = None, engine: str = "local", tier: str = "cost_effective"
+    path: Path,
+    ext: str,
+    timeout_s: Optional[float] = None,
+    engine: str = "local",
+    tier: str = "cost_effective",
+    speech_model: str = "base",
+    audio_timeout_s: Optional[float] = None,
 ) -> Extraction:
     ext = ext.lower().lstrip(".")
     if ext not in SUPPORTED:
-        raise ExtractionError(f"Unsupported file type .{ext}. Supported: PDF, DOCX, TXT, MD, CSV.")
+        raise ExtractionError(f"Unsupported file type .{ext}. Supported: {SUPPORTED_NAMES}.")
+    if ext in media.AUDIO:
+        return _audio(path, speech_model, audio_timeout_s)
+    if ext in media.IMAGE:
+        return _image(path)
     deadline = time.monotonic() + timeout_s if timeout_s else None
     if engine == "llamaparse" and ext == "pdf":
         return _llamaparse(path, tier, timeout_s or 120)
@@ -215,6 +229,28 @@ def _llamaparse(path: Path, tier: str, timeout_s: float) -> Extraction:
         info = {}
     meta = {key: value for key, value in info.items() if key in ("title", "author") and value}
     return Extraction(pages, True, {**meta, "extractor": "llamaparse"})
+
+
+def _audio(path: Path, model: str, timeout_s: Optional[float]) -> Extraction:
+    deadline = time.monotonic() + timeout_s if timeout_s else None
+    try:
+        seconds, title = media.audio_info(path)
+        segments, language = media.transcribe(path, model, deadline)
+    except media.MediaError as error:
+        raise ExtractionError(str(error)) from error
+    pages, layouts = media.audio_pages(segments)
+    meta: dict[str, Any] = {"media": "audio", "duration": round(max(seconds, segments[-1].end), 1), "language": language}
+    if title:
+        meta["title"] = title
+    return Extraction(pages, False, meta, layouts)
+
+
+def _image(path: Path) -> Extraction:
+    try:
+        text, layout = media.image_page(media.read_lines(path))
+    except media.MediaError as error:
+        raise ExtractionError(str(error)) from error
+    return Extraction([text], False, {"media": "image"}, [layout])
 
 
 def _docx(path: Path, deadline: Optional[float]) -> Extraction:

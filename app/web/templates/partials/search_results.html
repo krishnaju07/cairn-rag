@@ -4,7 +4,7 @@
     <span class="rank">{{ hit.rank }}</span>
     <div style="min-width:0">
       <div class="result-head">
-        <div class="row"><strong>{{ hit.filename }}</strong><span class="pill pill-grey">{{ 'p. ' if hit.paged else 'section ' }}{{ hit.page_start }}{% if hit.page_end != hit.page_start %}-{{ hit.page_end }}{% endif %}</span>{% if hit.kind == 'abstract' %}<span class="pill pill-orange">AI abstract</span>{% endif %}</div>
+        <div class="row"><strong>{{ hit.filename }}</strong><span class="pill pill-grey">{{ hit.label }}</span>{% if hit.kind == 'abstract' %}<span class="pill pill-orange">AI abstract</span>{% endif %}</div>
         <button class="btn btn-sm" type="button" hx-get="/sources/{{ hit.document_id }}?page={{ hit.page_start }}&chunk={{ hit.chunk_id }}{% if hit.focus %}&focus={{ hit.focus|map('join', '-')|join(',') }}{% endif %}" hx-target="#drawer-body" hx-swap="innerHTML" data-drawer="Source" data-wide>{{ icon('file-search', 13) }}Open source</button>
       </div>
       <div class="result-text">{{ highlight(hit.text, payload.query) }}</div>

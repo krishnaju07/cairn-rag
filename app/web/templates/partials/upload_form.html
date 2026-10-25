@@ -1,9 +1,9 @@
 <form hx-post="/collections/{{ collection.id }}/documents/stage" hx-encoding="multipart/form-data" hx-target="#upload-panel" hx-swap="innerHTML" hx-trigger="change" hx-boost="false">
   <label class="dropzone" data-dropzone>
-    <input type="file" id="upload-input" name="files" multiple accept=".pdf,.docx,.txt,.md,.csv">
+    <input type="file" id="upload-input" name="files" multiple accept="{{ accepted_types }}">
     <span class="icon-wrap">{{ icon('upload', 20) }}</span>
     <strong>Drop files here or choose them</strong>
-    <span class="muted" style="font-size:12.5px">PDF, DOCX, TXT, MD or CSV, up to 50 MB each</span>
+    <span class="muted" style="font-size:12.5px">Documents, images or audio: PDF, DOCX, TXT, MD, CSV, PNG, JPG, MP3, WAV and more, up to 50 MB each</span>
     <span class="btn btn-sm when-idle">Choose files</span>
   </label>
   <div class="loading-line" style="margin-top:12px">{{ icon('loader-circle', 16, 'spinner') }}Reading files and estimating cost…</div>

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, HTMLResponse, Response
 
 from ... import library, viewer
+from ...ingestion.media import MIME
 from ..templating import render
 
 router = APIRouter()
@@ -31,6 +32,14 @@ def page_image(document_id: str, page: int) -> Response:
     return Response(
         viewer.page_image(document_id, page), media_type="image/png", headers={"Cache-Control": "private, max-age=3600"}
     )
+
+
+@router.get("/documents/{document_id}/media")
+def media_file(document_id: str) -> FileResponse:
+    document = library.get_document(document_id)
+    if document["ext"] not in MIME:
+        raise library.LibraryError("This document is not an audio or image file.")
+    return FileResponse(library.document_path(document_id), media_type=MIME[document["ext"]])
 
 
 @router.get("/documents/{document_id}/file")

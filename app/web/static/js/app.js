@@ -63,6 +63,14 @@ document.addEventListener("click", (event) => {
   if (row && !event.target.closest("a, button, input, select, summary")) row.querySelector("a[href]")?.click();
 });
 
+document.addEventListener("click", (event) => {
+  const cue = event.target.closest(".cue[data-seek]");
+  const player = cue?.closest(".source-view")?.querySelector("audio");
+  if (!player) return;
+  player.currentTime = Number(cue.dataset.seek);
+  player.play().catch(() => {});
+});
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeDrawer();
 });
@@ -79,7 +87,7 @@ document.body.addEventListener("htmx:afterSwap", (event) => {
   const target = event.detail.target;
   if (target.id === "modal-body") openModal();
   if (target.id === "drawer-body") {
-    const mark = target.querySelector(".hl, mark");
+    const mark = target.querySelector(".hl, mark, .cue.strong, .cue.soft");
     if (mark) setTimeout(() => mark.scrollIntoView({ block: "center", behavior: "smooth" }), 250);
   }
 });

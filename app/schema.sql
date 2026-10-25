@@ -57,6 +57,14 @@ CREATE TABLE IF NOT EXISTS pages (
     PRIMARY KEY (document_id, page)
 );
 
+CREATE TABLE IF NOT EXISTS page_layout (
+    document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    page INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    data TEXT NOT NULL,
+    PRIMARY KEY (document_id, page)
+);
+
 CREATE TABLE IF NOT EXISTS doc_steps (
     document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     position INTEGER NOT NULL,

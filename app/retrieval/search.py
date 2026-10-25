@@ -6,6 +6,7 @@ from typing import Optional
 import numpy as np
 
 from .. import db
+from ..ingestion.media import clock
 from . import embeddings
 from .rerank import rerank
 from .text import query_terms, stem
@@ -17,6 +18,8 @@ OVERVIEW_DOCUMENTS = 4
 OVERVIEW_MIN_PER_DOCUMENT = 2
 RRF_K = 60
 CANDIDATES = 30
+LAYOUT_COLUMNS = "l.kind AS media, json_extract(l.data, '$.start') AS at"
+LAYOUT_JOIN = "LEFT JOIN page_layout l ON l.document_id = c.document_id AND l.page = c.page_start"
 _matrices: dict[str, tuple[tuple, np.ndarray, np.ndarray]] = {}
 _matrix_lock = threading.Lock()
 
@@ -37,6 +40,19 @@ class Hit:
     scores: dict[str, Optional[float]] = field(default_factory=dict)
     match: str = ""
     focus: list[tuple[int, int]] = field(default_factory=list)
+    media: str = ""
+    at: Optional[float] = None
+
+    @property
+    def label(self) -> str:
+        if self.media == "audio":
+            return f"at {clock(self.at)}"
+        if self.media == "image":
+            return "image"
+        unit = "p." if self.paged else "section"
+        if self.page_start == self.page_end:
+            return f"{unit} {self.page_start}"
+        return f"{unit} {self.page_start}-{self.page_end}"
 
     def as_dict(self) -> dict:
         return {
@@ -48,6 +64,9 @@ class Hit:
             "page_start": self.page_start,
             "page_end": self.page_end,
             "paged": self.paged,
+            "media": self.media,
+            "at": self.at,
+            "label": self.label,
             "focus": [list(span) for span in self.focus],
             "relevance": round(self.relevance, 4),
             "scores": {key: None if value is None else round(value, 4) for key, value in self.scores.items()},
@@ -139,7 +158,8 @@ def _coverage(query: str, text: str) -> float:
 def _fetch(ids: list[int]) -> dict[int, dict]:
     marks = ",".join("?" * len(ids))
     rows = db.many(
-        f"SELECT c.*, d.filename, d.paged FROM chunks c JOIN documents d ON d.id = c.document_id WHERE c.id IN ({marks})",
+        f"SELECT c.*, d.filename, d.paged, {LAYOUT_COLUMNS} FROM chunks c JOIN documents d ON d.id = c.document_id "
+        f"{LAYOUT_JOIN} WHERE c.id IN ({marks})",
         tuple(ids),
     )
     return {row["id"]: row for row in rows}
@@ -167,6 +187,8 @@ def _to_hit(
         scores=scores,
         match=match or row["text"],
         focus=focus or [],
+        media=row.get("media") or "",
+        at=row.get("at"),
     )
 
 
@@ -179,8 +201,8 @@ def opening_passages(collection_id: str, budget: int = OVERVIEW_PASSAGES, max_do
     hits: list[Hit] = []
     for document in documents:
         rows = db.many(
-            "SELECT c.*, d.filename, d.paged FROM chunks c JOIN documents d ON d.id = c.document_id "
-            "WHERE c.document_id = ? AND c.kind = 'chunk' ORDER BY c.idx LIMIT ?",
+            f"SELECT c.*, d.filename, d.paged, {LAYOUT_COLUMNS} FROM chunks c JOIN documents d ON d.id = c.document_id "
+            f"{LAYOUT_JOIN} WHERE c.document_id = ? AND c.kind = 'chunk' ORDER BY c.idx LIMIT ?",
             (document["id"], per_document),
         )
         hits.extend(_to_hit(row, 1.0, {"overview": 1.0}) for row in rows)

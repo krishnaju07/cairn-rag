@@ -40,10 +40,21 @@ def insert_row(
     return chunk_id
 
 
-def save_pages(conn: sqlite3.Connection, document_id: str, pages: list[str], starts: list[int]) -> None:
+def save_pages(
+    conn: sqlite3.Connection,
+    document_id: str,
+    pages: list[str],
+    starts: list[int],
+    layouts: Optional[list[dict]] = None,
+    kind: str = "",
+) -> None:
     conn.executemany(
         "INSERT OR REPLACE INTO pages (document_id, page, start_char, text) VALUES (?, ?, ?, ?)",
         [(document_id, number, start, text) for number, (start, text) in enumerate(zip(starts, pages), start=1)],
+    )
+    conn.executemany(
+        "INSERT OR REPLACE INTO page_layout (document_id, page, kind, data) VALUES (?, ?, ?, ?)",
+        [(document_id, number, kind, db.dumps(layout)) for number, layout in enumerate(layouts or [], start=1)],
     )
 
 
@@ -51,6 +62,7 @@ def clear_document(conn: sqlite3.Connection, document_id: str) -> None:
     conn.execute("DELETE FROM chunks_fts WHERE rowid IN (SELECT id FROM chunks WHERE document_id = ?)", (document_id,))
     conn.execute("DELETE FROM chunks WHERE document_id = ?", (document_id,))
     conn.execute("DELETE FROM pages WHERE document_id = ?", (document_id,))
+    conn.execute("DELETE FROM page_layout WHERE document_id = ?", (document_id,))
 
 
 def delete_document(document_id: str) -> None:

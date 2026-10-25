@@ -1,0 +1,18 @@
+{"question": "How much revenue did the company make in the third quarter?", "doc": "Quarterly Update.m4a", "contains": "$42 million", "page": 1, "says": ["42 million"]}
+{"question": "How many people does the company have across how many offices?", "doc": "Quarterly Update.m4a", "contains": "318 people", "page": 1, "says": ["318"]}
+{"question": "Which is the largest office and how many people work there?", "doc": "Quarterly Update.m4a", "contains": "Lisbon, with 94 people", "page": 1, "says": ["94"]}
+{"question": "When will the Meridian sensor ship?", "doc": "Quarterly Update.m4a", "contains": "14th of March", "page": 1, "says": ["14th of March", "March 14", "14 March"]}
+{"question": "How many customers are in the Norway pilot?", "doc": "Quarterly Update.m4a", "contains": "12 customers in Norway", "page": 1, "says": ["12"]}
+{"question": "By when must security training be completed?", "doc": "Quarterly Update.m4a", "contains": "30th of April", "page": 1, "says": ["30th of April", "April 30"]}
+{"question": "How big is the learning budget per person each year?", "doc": "Quarterly Update.m4a", "contains": "$1200 per person", "page": 1, "says": ["1200", "1,200"]}
+{"question": "How many weeks of paid leave do primary caregivers get?", "doc": "Quarterly Update.m4a", "contains": "20 weeks of fully paid leave", "page": 1, "says": ["20 weeks"]}
+{"question": "Where will the company offsite be held?", "doc": "Quarterly Update.m4a", "contains": "held in Porto", "page": 2, "says": ["Porto"]}
+{"question": "Who books the flights and hotels for the offsite?", "doc": "Quarterly Update.m4a", "contains": "booked by the travel team", "page": 2, "says": ["travel team"]}
+{"question": "What code pairs the Meridian sensor with the app?", "doc": "Meridian Sensor Quick Start.png", "contains": "KX-7421", "page": 1, "says": ["KX-7421"]}
+{"question": "How long do I hold the power button?", "doc": "Meridian Sensor Quick Start.png", "contains": "three seconds", "page": 1, "says": ["three seconds", "3 seconds"]}
+{"question": "How long does the Meridian battery last?", "doc": "Meridian Sensor Quick Start.png", "contains": "14 months", "page": 1, "says": ["14 months"]}
+{"question": "What is the total reimbursable amount on the Lisbon expense report?", "doc": "Lisbon Trip Expenses.png", "contains": "$791.75", "page": 1, "says": ["791.75"]}
+{"question": "Who submitted the expense report?", "doc": "Lisbon Trip Expenses.png", "contains": "Ana Ribeiro", "page": 1, "says": ["Ana Ribeiro"]}
+{"question": "What code pairs the Kestrel sensor with the app?", "answerable": false}
+{"question": "How many customers are in the Sweden pilot?", "answerable": false}
+{"question": "What is the daily meal limit for business travel?", "answerable": false}

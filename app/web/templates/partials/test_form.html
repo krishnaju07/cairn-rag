@@ -1,9 +1,9 @@
 <form hx-post="/pipelines/{{ pipeline.id }}/test/stage" hx-encoding="multipart/form-data" hx-target="#test-body" hx-swap="innerHTML" hx-trigger="change" hx-boost="false">
   <label class="dropzone" data-dropzone>
-    <input type="file" name="file" accept=".pdf,.docx,.txt,.md,.csv">
+    <input type="file" name="file" accept="{{ accepted_types }}">
     <span class="icon-wrap">{{ icon('upload', 20) }}</span>
     <strong>Choose a file</strong>
-    <span class="muted" style="font-size:12.5px">PDF, DOCX, TXT, MD or CSV</span>
+    <span class="muted" style="font-size:12.5px">PDF, DOCX, TXT, MD, CSV, images or audio</span>
   </label>
   <div class="loading-line" style="margin-top:12px">{{ icon('loader-circle', 16, 'spinner') }}Reading the file…</div>
 </form>

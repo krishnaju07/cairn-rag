@@ -38,6 +38,8 @@ def view(document_id: str, page: int, chunk_id: Optional[int], focus: str = "") 
     )
     focused = [span for span in (_local(s, e, starts, page, stored["text"]) for s, e in parse_focus(focus)) if span]
     marks = _marks(context, focused)
+    layout = db.one("SELECT kind, data FROM page_layout WHERE document_id = ? AND page = ?", (document_id, page))
+    kind = layout["kind"] if layout else ""
     payload: dict[str, Any] = {
         **_neighbours(chunk),
         "document": document,
@@ -47,13 +49,40 @@ def view(document_id: str, page: int, chunk_id: Optional[int], focus: str = "") 
         "chunk": chunk,
         "span": context,
         "segments": _segments(stored["text"], marks),
+        "media": kind,
+        "audio": None,
         "image": None,
         "rects": [],
     }
-    if document["ext"] == "pdf":
+    if kind == "audio":
+        payload["audio"] = _audio(document_id, db.loads(layout["data"], {}), stored["text"], marks)
+    elif kind == "image":
+        payload["image"] = f"/documents/{document_id}/media"
+        payload["rects"] = _image_rects(db.loads(layout["data"], {}), marks)
+    elif document["ext"] == "pdf":
         payload["image"] = f"/documents/{document_id}/pages/{page}/image"
         payload["rects"] = _rects(library.document_path(document_id), page, stored["text"], marks)
     return payload
+
+
+def _level(marks: list[Mark], start: int, end: int) -> str:
+    inside = [strong for first, last, strong in marks if first < end and start < last]
+    return "strong" if any(inside) else ("soft" if inside else "")
+
+
+def _audio(document_id: str, layout: dict[str, Any], text: str, marks: list[Mark]) -> dict[str, Any]:
+    cues = [{"start": start, "end": end, "text": text[a:b], "level": _level(marks, a, b)} for start, end, a, b in layout["cues"]]
+    seek = next((cue["start"] for level in ("strong", "soft") for cue in cues if cue["level"] == level), layout["start"])
+    return {"src": f"/documents/{document_id}/media", "start": layout["start"], "end": layout["end"], "seek": seek, "cues": cues}
+
+
+def _image_rects(layout: dict[str, Any], marks: list[Mark]) -> list[dict[str, Any]]:
+    rects = []
+    for x0, y0, x1, y1, start, end in layout["boxes"]:
+        level = _level(marks, start, end)
+        if level:
+            rects.append({"x": x0 * 100, "y": y0 * 100, "w": (x1 - x0) * 100, "h": (y1 - y0) * 100, "strong": level == "strong"})
+    return rects
 
 
 def _on_page(chunk: dict[str, Any], page: int) -> bool:

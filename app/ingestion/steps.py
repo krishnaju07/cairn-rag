@@ -9,7 +9,7 @@ import numpy as np
 from .. import db
 from ..generation import providers
 from ..retrieval import embeddings, store
-from . import extract, pages, tokens
+from . import extract, media, pages, tokens
 from .chunking import Chunk, chunk_document, chunk_text
 
 LLM_SYSTEM = "You are a precise assistant. Follow the instructions exactly and reply with only what is asked."
@@ -28,6 +28,7 @@ class Context:
     document_id: Optional[str] = None
     pages: list[str] = field(default_factory=list)
     starts: list[int] = field(default_factory=list)
+    layouts: list[dict[str, Any]] = field(default_factory=list)
     text: str = ""
     paged: bool = False
     meta: dict[str, Any] = field(default_factory=dict)
@@ -62,15 +63,25 @@ def _page_bounds(ctx: Context, chunk: Chunk) -> tuple[int, int]:
 
 
 def run_extract(ctx: Context, settings: dict[str, Any]) -> Output:
-    result = extract.extract(ctx.path, ctx.ext, settings["timeout_s"], settings["engine"], settings["tier"])
-    ctx.pages, ctx.paged = result.pages, result.paged
+    result = extract.extract(
+        ctx.path,
+        ctx.ext,
+        settings["timeout_s"],
+        settings["engine"],
+        settings["tier"],
+        settings["speech_model"],
+        settings["audio_timeout_s"],
+    )
+    ctx.pages, ctx.paged, ctx.layouts = result.pages, result.paged, result.layouts
     ctx.meta.update(result.meta)
     ctx.text, ctx.starts = pages.join(result.pages)
     ctx.token_total = sum(tokens.count_many(result.pages))
     unit = "pages" if result.paged else "sections"
     via = " via LlamaParse" if result.meta.get("extractor") == "llamaparse" else ""
+    source = {"audio": f"{media.clock(result.meta.get('duration'))} of speech, ", "image": "text read from an image, "}
     return Output(
-        f"{len(result.pages)} {unit}, {len(ctx.text):,} characters, {ctx.token_total:,} tokens{via}",
+        f"{source.get(result.meta.get('media'), '')}{len(result.pages)} {unit}, {len(ctx.text):,} characters, "
+        f"{ctx.token_total:,} tokens{via}",
         {
             "pages": len(result.pages),
             "unit": unit,
@@ -136,7 +147,7 @@ def run_index(ctx: Context, settings: dict[str, Any]) -> Output:
         )
     with db.transaction() as conn:
         store.clear_document(conn, ctx.document_id)
-        store.save_pages(conn, ctx.document_id, ctx.pages, ctx.starts)
+        store.save_pages(conn, ctx.document_id, ctx.pages, ctx.starts, ctx.layouts, ctx.meta.get("media", ""))
         ctx.chunk_ids = []
         for index, (chunk, vector) in enumerate(zip(ctx.chunks, ctx.vectors)):
             first, last = _page_bounds(ctx, chunk)
@@ -175,9 +186,9 @@ def run_metadata(ctx: Context, settings: dict[str, Any]) -> Output:
     from py3langid.langid import classify
 
     first_line = next((line.strip() for line in ctx.text.splitlines() if line.strip()), "")
-    guessed = first_line if ctx.ext != "csv" and len(first_line) <= 120 else ""
+    guessed = first_line if ctx.ext != "csv" and not ctx.meta.get("media") and len(first_line) <= 120 else ""
     title = ctx.meta.get("title") or guessed or Path(ctx.filename).stem
-    language = classify(ctx.text[:5000])[0] if ctx.text.strip() else "unknown"
+    language = ctx.meta.get("language") or (classify(ctx.text[:5000])[0] if ctx.text.strip() else "unknown")
     words = len(ctx.text.split())
     ctx.meta.update(
         {

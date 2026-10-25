@@ -2,7 +2,7 @@
 {% import "macros.html" as ui %}
 {% block title %}{{ document.filename }} · Cairn{% endblock %}
 {% block content %}
-<div class="page">
+<div class="page" id="doc-page" {% if document.status in ('queued', 'processing') %}hx-get="/collections/{{ collection.id }}/documents/{{ document.id }}" hx-trigger="every 1s" hx-select="#doc-page" hx-swap="outerHTML"{% endif %}>
   {{ ui.crumbs([('Collections', '/collections'), (collection.name, '/collections/' ~ collection.id), (document.filename, None)]) }}
   <div class="page-head">
     <div>
@@ -23,7 +23,7 @@
     <div class="stack">
       <div class="card">
         <div class="card-title">File info</div>
-        <dl class="kv wide"><dt>Uploaded</dt><dd>{{ document.created_at|timeago }}</dd><dt>Size</dt><dd>{{ document.size_bytes|filesize }}</dd><dt>Type</dt><dd>{{ {'pdf': 'application/pdf', 'docx': 'Word document', 'md': 'Markdown', 'txt': 'Plain text', 'csv': 'CSV table'}[document.ext] }}</dd><dt>Pipeline</dt><dd>{{ collection.pipeline_name }} v{{ document.pipeline_version }}</dd></dl>
+        <dl class="kv wide"><dt>Uploaded</dt><dd>{{ document.created_at|timeago }}</dd><dt>Size</dt><dd>{{ document.size_bytes|filesize }}</dd><dt>Type</dt><dd>{{ {'pdf': 'application/pdf', 'docx': 'Word document', 'md': 'Markdown', 'txt': 'Plain text', 'csv': 'CSV table'}.get(document.ext) or ('Audio recording' if document.meta.media == 'audio' else 'Image') }}</dd><dt>Pipeline</dt><dd>{{ collection.pipeline_name }} v{{ document.pipeline_version }}</dd></dl>
       </div>
       <div class="card">
         <div class="card-title" style="margin-bottom:12px">Processing steps</div>
@@ -45,8 +45,8 @@
         <div class="card">
           <div class="card-title" style="margin-bottom:12px">Metadata</div>
           <dl class="meta-grid">
-            {% for key, label in (('title', 'Title'), ('language', 'Language'), ('pages', 'Pages'), ('words', 'Words'), ('sentences', 'Sentences'), ('reading_minutes', 'Reading time'), ('author', 'Author')) %}
-              {% if document.meta.get(key) is not none and document.meta.get(key) != '' %}<div><dt>{{ label }}</dt><dd>{% if key == 'reading_minutes' %}{{ document.meta[key] }} min{% elif key == 'words' or key == 'sentences' %}{{ '{:,}'.format(document.meta[key]) }}{% else %}{{ document.meta[key] }}{% endif %}</dd></div>{% endif %}
+            {% for key, label in (('title', 'Title'), ('language', 'Language'), ('duration', 'Duration'), ('pages', 'Pages'), ('words', 'Words'), ('sentences', 'Sentences'), ('reading_minutes', 'Reading time'), ('author', 'Author')) %}
+              {% if document.meta.get(key) is not none and document.meta.get(key) != '' and not (key == 'pages' and document.meta.media) %}<div><dt>{{ label }}</dt><dd>{% if key == 'duration' %}{{ document.meta[key]|clock }}{% elif key == 'reading_minutes' %}{{ document.meta[key] }} min{% elif key == 'words' or key == 'sentences' %}{{ '{:,}'.format(document.meta[key]) }}{% else %}{{ document.meta[key] }}{% endif %}</dd></div>{% endif %}
             {% endfor %}
           </dl>
         </div>

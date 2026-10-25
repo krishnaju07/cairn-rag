@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from ..generation import providers
 from ..retrieval.embeddings import EMBED_MODELS, limit_for
-from . import llamaparse
+from . import llamaparse, media
 
 ABSTRACT_PROMPT = (
     "Write a concise abstract (2-3 sentences) that captures the main topic and key points of the following document.\n\n"
@@ -67,7 +67,7 @@ CATALOG: dict[str, StepDef] = {
             "Text Extraction",
             "Parsing",
             "file-text",
-            "PDF, DOCX, TXT, MD and CSV",
+            "PDF, DOCX, TXT, MD, CSV, images and audio",
             required=True,
             first=True,
             fields=(
@@ -117,13 +117,29 @@ CATALOG: dict[str, StepDef] = {
                     900,
                     "Extraction stops with a clear error past this limit.",
                 ),
+                {
+                    "key": "speech_model",
+                    "label": "Speech model for audio",
+                    "type": "select",
+                    "default": "base",
+                    "options": [{"value": value, "label": label, "hint": hint} for value, label, hint in media.SPEECH_MODELS],
+                    "help": "Audio is transcribed on this machine. The model downloads the first time an audio file is processed.",
+                },
+                _number(
+                    "audio_timeout_s",
+                    "Time limit per recording (seconds)",
+                    1800,
+                    60,
+                    7200,
+                    "Transcription stops with a clear error past this limit.",
+                ),
             ),
             guide={
-                "what": "Reads each uploaded file and turns it into plain text, page by page. PDFs keep their real pages; other formats are split into sections of about 3,000 characters so citations can still point somewhere.",
+                "what": "Reads each uploaded file and turns it into plain text, page by page. PDFs keep their real pages; other formats are split into sections of about 3,000 characters so citations can still point somewhere. Images are read with OCR and audio is transcribed to text.",
                 "when": "Always. Every pipeline starts here.",
-                "how": "PDFs are read with PyMuPDF and every word keeps its position on the page, which is how passages are highlighted later. DOCX tables become rows, CSV rows become self-describing lines.",
-                "config": "Turn on OCR to send PDFs to LlamaParse (LlamaCloud) instead. It handles scanned PDFs and complex tables but uses your LlamaCloud credits, and the page highlight then shows the cited passage beside the page image. The time limit protects the worker from very large files.",
-                "tips": "Export slides and scans to text-based PDFs before uploading for the best results.",
+                "how": "PDFs are read with PyMuPDF and every word keeps its position on the page, which is how passages are highlighted later. DOCX tables become rows, CSV rows become self-describing lines. Images are read locally with RapidOCR and each line of text keeps its position, so a cited passage is outlined on the image. Audio is transcribed locally with Whisper and cut into sections of about 90 seconds that keep their timestamps, so a citation opens the recording at that moment.",
+                "config": "Turn on OCR to send PDFs to LlamaParse (LlamaCloud) instead. It handles scanned PDFs and complex tables but uses your LlamaCloud credits, and the page highlight then shows the cited passage beside the page image. Images and audio always stay on this machine. A larger speech model is more accurate and slower. The time limits protect the worker from very large files.",
+                "tips": "Export slides and scans to text-based PDFs before uploading for the best results. Images need readable text: photos and drawings without any text cannot be searched yet. Audio and image support needs the media extras (pip install -e '.[media]').",
             },
         ),
         StepDef(
@@ -344,6 +360,8 @@ def summary(step: dict[str, Any]) -> str:
         return f"{model}, up to {settings['max_tokens']} tokens"
     if kind == "extract" and settings["engine"] == "llamaparse":
         return f"PDFs through LlamaParse ({settings['tier'].replace('_', ' ')}), other files locally"
+    if kind == "extract":
+        return f"{CATALOG[kind].blurb}. Audio: Whisper {settings['speech_model']}"
     return CATALOG[kind].blurb
 
 

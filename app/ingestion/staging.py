@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from ..config import MAX_UPLOAD_MB, UPLOAD_DIR
-from . import tokens
-from .extract import SUPPORTED, ExtractionError, ScannedPdfError, extract
+from . import media, tokens
+from .extract import SUPPORTED, SUPPORTED_NAMES, ExtractionError, ScannedPdfError, extract
 
 STAGE_DIR = UPLOAD_DIR / "staged"
 STAGE_DIR.mkdir(parents=True, exist_ok=True)
@@ -26,15 +26,26 @@ def _scanned_record(path: Path) -> dict[str, Any]:
 def stage(filename: str, data: bytes, allow_scanned: bool = False) -> dict[str, Any]:
     ext = Path(filename).suffix.lower().lstrip(".")
     if ext not in SUPPORTED:
-        raise ExtractionError(f"Unsupported file type .{ext or '?'}. Supported: PDF, DOCX, TXT, MD, CSV.")
+        raise ExtractionError(f"Unsupported file type .{ext or '?'}. Supported: {SUPPORTED_NAMES}.")
     if len(data) > MAX_UPLOAD_MB * 1024 * 1024:
         raise ExtractionError(f"File is larger than {MAX_UPLOAD_MB} MB.")
     stage_id = f"up_{uuid.uuid4().hex[:12]}"
     path = STAGE_DIR / f"{stage_id}.{ext}"
     path.write_bytes(data)
     try:
-        extraction = extract(path, ext)
-        counts = {"pages": len(extraction.pages), "paged": extraction.paged, "tokens": sum(tokens.count_many(extraction.pages))}
+        if ext in media.AUDIO:
+            seconds, _ = media.audio_info(path)
+            counts = {**media.estimate_audio(seconds), "media": "audio", "seconds": round(seconds)}
+        elif ext in media.IMAGE:
+            media.check_image(path)
+            counts = {"pages": 1, "paged": False, "tokens": media.IMAGE_TOKENS, "media": "image"}
+        else:
+            extraction = extract(path, ext)
+            total = sum(tokens.count_many(extraction.pages))
+            counts = {"pages": len(extraction.pages), "paged": extraction.paged, "tokens": total}
+    except media.MediaError as error:
+        path.unlink(missing_ok=True)
+        raise ExtractionError(str(error)) from error
     except ScannedPdfError:
         if not allow_scanned:
             path.unlink(missing_ok=True)

@@ -27,6 +27,6 @@
   <div class="card">
     <div class="card-title">Reprocess documents</div>
     <p class="muted" style="margin-bottom:14px">Runs every ready or failed document through the current version again. Embeddings are recomputed and the index is rebuilt for each file.</p>
-    <button class="btn" type="button" hx-post="/collections/{{ collection.id }}/reprocess" hx-swap="none" hx-boost="false">{{ icon('rotate-ccw', 14) }}Reprocess all documents</button>
+    <button class="btn" type="button" hx-post="/collections/{{ collection.id }}/reprocess" hx-vals='{"redirect": "1"}' hx-swap="none" hx-boost="false">{{ icon('rotate-ccw', 14) }}Reprocess all documents</button>
   </div>
 </div>

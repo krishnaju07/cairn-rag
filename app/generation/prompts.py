@@ -33,7 +33,4 @@ def build_user(question: str, hits: list[Hit], overview: bool = False) -> str:
 
 
 def label(hit: Hit) -> str:
-    unit = "p." if hit.paged else "section"
-    if hit.page_start == hit.page_end:
-        return f"{unit} {hit.page_start}"
-    return f"{unit} {hit.page_start}-{hit.page_end}"
+    return hit.label

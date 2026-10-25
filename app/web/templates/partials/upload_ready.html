@@ -12,7 +12,7 @@
         <div class="row spread" style="padding:10px 0;border-bottom:1px solid var(--border)">
           <div class="row" style="min-width:0">{{ ui.file_badge(file.ext) }}
             <div style="min-width:0"><div style="font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ file.filename }}</div>
-              <div class="muted" style="font-size:12.5px">{{ file.pages|plural('page' if file.paged else 'section') }} · {{ '{:,}'.format(file.tokens) }} tokens</div></div></div>
+              <div class="muted" style="font-size:12.5px">{% if file.media == 'audio' %}{{ file.seconds|clock }} of audio · about {{ '{:,}'.format(file.tokens) }} tokens{% elif file.media == 'image' %}Image · about {{ '{:,}'.format(file.tokens) }} tokens{% else %}{{ file.pages|plural('page' if file.paged else 'section') }} · {{ '{:,}'.format(file.tokens) }} tokens{% endif %}</div></div></div>
           <span class="dim" style="font-size:12.5px">{{ file.size_bytes|filesize }}</span>
         </div>
       {% endfor %}
