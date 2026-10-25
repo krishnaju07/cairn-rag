@@ -1,0 +1,19 @@
+{
+  "name": "cairn-rag",
+  "main": "src/index.js",
+  "compatibility_date": "2025-08-01",
+  "containers": [
+    {
+      "class_name": "CairnContainer",
+      "image": "./Dockerfile",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "CAIRN", "class_name": "CairnContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["CairnContainer"] }],
+  "vars": {
+    "ALLOWED_HOSTS": "cairn-rag.krishnamahi0703.workers.dev"
+  }
+}

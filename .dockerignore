@@ -1,0 +1,8 @@
+.env
+.venv/
+data/
+eval/
+cairn_rag.egg-info/
+.git/
+.ruff_cache/
+__pycache__/
