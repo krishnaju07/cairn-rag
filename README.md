@@ -16,9 +16,7 @@ python3 -m venv .venv
 
 Open http://127.0.0.1:8100. Add `--reload` while developing, or `--port` to change the port. The first start downloads about 150 MB of local models once; the home page says when they are ready. Health check: `/healthz`.
 
-A fresh install starts with a **Sample: Northwind Labs** collection (a handbook, benefits guide, remote-work policy and holiday calendar, plus an image and a recording when the media extras are installed), so there is something to ask about straight away. It is created once per database: delete it whenever you like, or set `SEED_SAMPLE=0` to skip it. On a host with a temporary disk, such as Render's free plan, the data is gone after every restart, so it is created again each time.
-
-To build more sample documents and upload them to a collection:
+To try it right away, build the sample documents and upload them to a collection:
 
 ```bash
 .venv/bin/python eval/basic/build.py
@@ -137,8 +135,6 @@ eval/          suites (basic, hard, media), builders, Q&A sets, evaluation scrip
 - On PDFs read with LlamaParse, the cited passage is shown next to the page image instead of outlined on it, because the extracted text no longer matches the page layout word for word.
 - Documents processed before a layout change show the highlight beside the page until you press Reprocess.
 - Image and audio support was run for real (RapidOCR and faster-whisper) but only on synthetic material: speech from a macOS voice and text rendered by PyMuPDF. Noisy recordings, accents, several speakers and phone photos of documents will read worse. The Base speech model already mishears some words ("our" became "are"), and a larger model helps at the cost of speed. A 1:43 recording took 5.5 seconds with Base on this machine.
-- The sample collection picks its answer model when it is created: a local Ollama or NVIDIA model if one is ready, otherwise Extractive, which quotes sentences and cannot reliably refuse. Change it under Settings → Answers.
-- The image and audio samples are only added when the media extras are installed. With them, the app peaked at about 1.27 GB in my test (0.79 GB with text only, on a Mac), so they do not fit on Render's 512 MB free plan. Use a larger instance and `pip install ".[media]"` to try them there.
 - Photos and drawings with no text cannot be searched yet. There is no vision or image-embedding step, so such an image is rejected with a message that says so. Text recognition is tuned for English.
 - Image highlights outline whole lines of text, not single words, and audio highlights cover whole transcript lines.
 - On macOS, loading PyAV (audio) and OpenCV (images) in one process prints an Objective-C "implemented in both" warning. I saw no problem from it.

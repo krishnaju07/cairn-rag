@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import db, library, sample
+from . import db, library
 from .api import collections as collections_api
 from .api import public as public_api
 from .generation.providers import ProviderError
@@ -28,7 +28,6 @@ async def lifespan(app: FastAPI):
     staging.purge_old()
     warmup.start()
     jobs.resume_interrupted()
-    sample.start()
     yield
 
 
